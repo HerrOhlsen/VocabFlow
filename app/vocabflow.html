@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VocabFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Nunito+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f6f3ef;
+  --bg-warm: #efe9e0;
+  --card-bg: #ffffff;
+  --card-shadow: 0 2px 20px rgba(26,26,46,0.06), 0 0 0 1px rgba(26,26,46,0.03);
+  --card-shadow-hover: 0 8px 40px rgba(26,26,46,0.10), 0 0 0 1px rgba(26,26,46,0.05);
+  --text: #1a1a2e;
+  --text-secondary: #6b6b80;
+  --text-light: #9b9bab;
+  --accent: #4361ee;
+  --accent-light: #eef0ff;
+  --again: #e63946;
+  --again-light: #fef0f1;
+  --hard: #f4a261;
+  --hard-light: #fef6ee;
+  --good: #2a9d8f;
+  --good-light: #edf8f6;
+  --easy: #4361ee;
+  --easy-light: #eef0ff;
+  --fresh: #4361ee;
+  --learning: #e63946;
+  --familiar: #f4a261;
+  --mastered: #2a9d8f;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-body: 'Nunito Sans', 'Segoe UI', sans-serif;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  min-height: 100vh;
+}
+
+/* ═══ LOADING ═══ */
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+.loader-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e8e4de;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text { color: var(--text-secondary); font-size: 0.9rem; }
+
+/* ═══ NAME ENTRY ═══ */
+.welcome {
+  padding: 60px 0 0;
+  text-align: center;
+}
+.welcome-logo {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.welcome-tag {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 40px;
+}
+.name-form {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--card-shadow);
+  text-align: left;
+}
+.name-form label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 10px;
+}
+.name-form input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e8e4de;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text);
+  background: #fff;
+  transition: border-color var(--transition);
+  margin-bottom: 16px;
+}
+.name-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.name-hint {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  margin-top: -8px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+/* ═══ HEADER ═══ */
+.header {
+  text-align: center;
+  padding: 12px 0 24px;
+  position: relative;
+}
+.header-logo {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--text-light);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.header-title {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+.header-user {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+.header-tag {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ═══ STREAK ═══ */
+.streak-card {
+  background: linear-gradient(135deg, #fff8f0 0%, #fff3e6 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 16px;
+  border: 1px solid rgba(244,162,97,0.15);
+}
+.streak-half {
+  flex: 1;
+  text-align: center;
+}
+.streak-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(244,162,97,0.25);
+  margin: 0 16px;
+}
+.streak-flame {
+  font-size: 2.2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+  display: block;
+}
+.streak-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+  display: block;
+}
+.streak-count {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.streak-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.streak-zero .streak-flame { opacity: 0.3; filter: grayscale(1); }
+
+/* ═══ STATS GRID ═══ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+.stat-due .stat-value { color: var(--accent); }
+.stat-done .stat-value { color: var(--good); }
+.stat-total .stat-value { color: var(--text); }
+.stat-new .stat-value { color: var(--fresh); }
+
+/* ═══ DISTRIBUTION BAR ═══ */
+.dist-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  padding: 16px 16px 14px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 16px;
+}
+.dist-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.dist-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #eee;
+  margin-bottom: 10px;
+}
+.dist-bar span {
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}
+.dist-bar .b-fresh { background: var(--fresh); }
+.dist-bar .b-learning { background: var(--learning); }
+.dist-bar .b-familiar { background: var(--familiar); }
+.dist-bar .b-mastered { background: var(--mastered); }
+.dist-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.dist-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.dist-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══ LIBRARY BUTTON ═══ */
+.btn-library {
+  width: 100%;
+  background: var(--card-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: var(--card-shadow);
+  margin-bottom: 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-library:active { background: var(--accent-light); }
+.btn-library .bl-sub {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-weight: 500;
+  margin-top: 2px;
+}
+.btn-library .bl-chevron { color: var(--text-light); font-size: 0.75rem; }
+
+/* ═══ START BUTTON ═══ */
+.btn-start {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 16px rgba(67,97,238,0.3);
+}
+.btn-start:active { transform: scale(0.97); }
+.btn-start:disabled {
+  background: #ccc;
+  box-shadow: none;
+  cursor: default;
+}
+
+.btn-bonus {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: 2px dashed #d8d1c4;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-bonus:active {
+  transform: scale(0.97);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.backlog-hint {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: #fef4e6;
+  border: 1px solid #f0d5a0;
+  color: #7a5518;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.backlog-hint strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+/* ═══ LIBRARY VIEW ═══ */
+.lib-back {
+  background: none;
+  border: none;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  padding: 8px 12px 8px 0;
+  margin-bottom: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.lib-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.lib-sub {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  margin-bottom: 20px;
+}
+.set-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+}
+.set-card:active { transform: scale(0.98); }
+.set-card.active { border: 2px solid var(--accent); padding: 14px 16px; }
+.set-info { flex: 1; min-width: 0; }
+.set-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+.set-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.set-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.set-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.set-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.lib-section {
+  margin-top: 22px;
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lib-section::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.lib-section:first-child { margin-top: 0; }
+
+.lib-subject {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lib-subject::before {
+  content: '';
+  width: 5px;
+  height: 22px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.lib-subject:first-child { margin-top: 0; }
+
+details.lib-cat { margin-bottom: 14px; }
+details.lib-cat > summary.lib-cat-summary {
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+details.lib-cat > summary.lib-cat-summary::-webkit-details-marker { display: none; }
+details.lib-cat > summary.lib-cat-summary::before {
+  content: '▸';
+  font-size: 0.85rem;
+  color: var(--accent);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+details.lib-cat[open] > summary.lib-cat-summary::before { transform: rotate(90deg); }
+details.lib-cat > summary.lib-cat-summary:hover {
+  background: var(--accent-light);
+  color: var(--text);
+}
+.lib-cat-count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.lib-cat-body { padding: 4px 0 0 4px; }
+
+/* ═══ INFO BUTTON + MODAL ═══ */
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-style: italic;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 6px rgba(67,97,238,0.3);
+}
+.info-btn:hover { transform: scale(1.08); }
+.info-btn:active { transform: scale(0.95); }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,18,15,0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 26px 24px 22px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: modalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.modal-text {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.modal-text strong { color: var(--text); }
+.modal-link {
+  display: block;
+  padding: 12px 14px;
+  background: var(--accent-light);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-bottom: 16px;
+  text-align: center;
+  transition: transform var(--transition);
+}
+.modal-link:active { transform: scale(0.98); }
+.modal-close {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.set-toggle {
+  width: 48px;
+  height: 28px;
+  background: #e8e4de;
+  border-radius: 14px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+.set-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--transition);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.set-card.active .set-toggle { background: var(--accent); }
+.set-card.active .set-toggle::after { transform: translateX(20px); }
+
+/* ═══ LEARNING VIEW ═══ */
+.learn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 16px;
+}
+.learn-back {
+  background: none;
+  border: none;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  padding: 8px 12px 8px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.learn-progress-text {
+  font-size: 0.82rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+.autoplay-toggle {
+  background: none;
+  border: 1.5px solid #e8e4de;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-light);
+  cursor: pointer;
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  transition: all var(--transition);
+}
+.autoplay-toggle.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.learn-pbar-wrap {
+  height: 5px;
+  border-radius: 3px;
+  background: #e8e4de;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.learn-pbar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* ═══ FLASHCARD ═══ */
+.card-perspective {
+  perspective: 1200px;
+  margin-bottom: 20px;
+}
+.card-inner {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  transition: transform 0.55s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-inner.flipped { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.card-back-face {
+  transform: rotateY(180deg);
+}
+
+/* Card front */
+.cf-badges {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.cf-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cf-badge-sub { background: var(--accent-light); color: var(--accent); }
+.cf-badge-set { background: var(--bg-warm); color: var(--text-secondary); }
+.cf-badge-new { background: #fff3e6; color: #e8890c; }
+
+.cf-word {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  flex-grow: 0;
+}
+.cf-sentence {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  font-style: italic;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+.cf-tap-hint {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 12px;
+  border-top: 1px solid #f0ece6;
+  margin-top: auto;
+}
+
+/* Card back */
+.cb-main {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  color: var(--accent);
+}
+.cb-sub {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.cb-section {
+  padding: 12px 0;
+  border-top: 1px solid #f0ece6;
+}
+.cb-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-light);
+  margin-bottom: 6px;
+}
+.cb-section-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.cb-section-text b { color: var(--text); font-weight: 700; font-style: normal; }
+
+.cb-image {
+  display: block;
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: var(--radius-sm);
+  margin: 12px 0 16px;
+  object-fit: contain;
+  align-self: center;
+}
+.cb-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 14px;
+  -webkit-tap-highlight-color: transparent;
+}
+.cb-audio-btn:active { transform: scale(0.96); }
+.cb-audio-btn::before { content: '🔊'; font-size: 1rem; }
+.cb-audio-btn-inline {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  margin: 0 0 0 8px;
+  vertical-align: middle;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.cb-audio-btn-inline::before { font-size: 0.8rem; }
+.cb-mnemonic {
+  background: #fff8ec;
+  border-left: 3px solid #fdcb6e;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-top: 14px;
+}
+.cb-mnemonic::before {
+  content: '💡 Eselsbrücke';
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b88014;
+  margin-bottom: 4px;
+}
+
+/* ═══ RATING BUTTONS ═══ */
+.rating-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease 0.25s, transform 0.35s ease 0.25s;
+  pointer-events: none;
+}
+.rating-buttons.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.rating-btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 4px 12px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: center;
+  transition: transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rating-btn:active { transform: scale(0.94); }
+.rating-btn:disabled { opacity: 0.5; cursor: default; }
+.rating-btn .rb-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: block;
+}
+.rating-btn .rb-interval {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.75;
+  margin-top: 2px;
+  display: block;
+}
+.rb-again { background: var(--again-light); color: var(--again); }
+.rb-hard { background: var(--hard-light); color: var(--hard); }
+.rb-good { background: var(--good-light); color: var(--good); }
+.rb-easy { background: var(--easy-light); color: var(--easy); }
+
+/* ═══ SESSION END ═══ */
+.session-end {
+  text-align: center;
+  padding: 32px 0 0;
+  animation: fadeUp 0.5s ease;
+}
+.se-emoji { font-size: 3rem; margin-bottom: 8px; display: block; }
+.se-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+.se-stats {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 20px;
+  text-align: left;
+}
+.se-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 0.92rem;
+}
+.se-stat-row + .se-stat-row { border-top: 1px solid #f0ece6; }
+.se-stat-label { color: var(--text-secondary); }
+.se-stat-value { font-weight: 700; }
+.se-next {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.se-buttons { display: flex; flex-direction: column; gap: 10px; }
+.btn-secondary {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e8e4de;
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary:active { border-color: var(--accent); }
+
+/* ═══ SYNC INDICATOR ═══ */
+.sync-indicator {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: var(--card-bg);
+  padding: 8px 14px;
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+.sync-indicator.visible { opacity: 1; }
+.sync-indicator.error { color: var(--again); }
+
+/* ═══ EMPTY STATE ═══ */
+.empty-state {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 16px;
+}
+.empty-emoji { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+.empty-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.empty-text {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+/* ═══ SET MANAGER (Teacher UI) ═══ */
+.sm-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.sm-title { font-size:1.3rem; font-weight:700; color:var(--text-primary); flex:1; }
+.sm-btn-new { background:var(--easy); color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:0.85rem; font-weight:600; cursor:pointer; }
+.sm-btn-new:active { opacity:0.85; }
+.sm-set { background:#fff; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:14px 16px; margin-bottom:10px; cursor:pointer; transition:box-shadow 0.15s; }
+.sm-set:active { box-shadow:0 0 0 2px var(--accent); }
+.sm-set-top { display:flex; align-items:center; gap:10px; }
+.sm-set-info { flex:1; min-width:0; }
+.sm-set-name { font-weight:700; color:var(--text-primary); font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sm-set-meta { font-size:0.78rem; color:var(--text-light); margin-top:2px; }
+.sm-set-owner { font-size:0.72rem; color:var(--text-secondary); margin-top:2px; }
+.sm-set-chevron { color:var(--text-light); font-size:0.75rem; flex-shrink:0; }
+.sm-set.mine { border-left:3px solid var(--easy); }
+.sm-set.readonly { opacity:0.7; }
+.sm-filter { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.sm-filter-btn { background:var(--accent-light); border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:5px 12px; font-size:0.78rem; cursor:pointer; color:var(--text-secondary); font-weight:500; }
+.sm-filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+/* ═══ SET EDITOR ═══ */
+.se-meta { background:#fff; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:16px; margin-bottom:16px; }
+.se-field { margin-bottom:12px; }
+.se-field:last-child { margin-bottom:0; }
+.se-field label { display:block; font-size:0.75rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
+.se-field input, .se-field select, .se-field textarea { width:100%; border:1px solid rgba(0,0,0,0.12); border-radius:8px; padding:8px 10px; font-size:0.9rem; font-family:inherit; background:#fafafa; }
+.se-field input:focus, .se-field select:focus, .se-field textarea:focus { outline:none; border-color:var(--accent); background:#fff; }
+.se-field textarea { resize:vertical; min-height:60px; }
+.se-cards-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.se-cards-title { font-size:1rem; font-weight:700; color:var(--text-primary); flex:1; }
+.se-btn-add { background:var(--accent-light); border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:6px 12px; font-size:0.8rem; cursor:pointer; color:var(--accent); font-weight:600; }
+.se-card { background:#fff; border-radius:10px; border:1px solid rgba(0,0,0,0.08); padding:12px 14px; margin-bottom:8px; }
+.se-card-row { display:flex; gap:10px; align-items:center; }
+.se-card-front { font-weight:600; color:var(--text-primary); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.se-card-back { color:var(--text-secondary); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.se-card-actions { display:flex; gap:6px; flex-shrink:0; }
+.se-card-btn { background:none; border:none; cursor:pointer; font-size:0.85rem; padding:4px; border-radius:6px; }
+.se-card-btn:hover { background:rgba(0,0,0,0.05); }
+.se-card-edit { display:none; margin-top:10px; }
+.se-card.editing .se-card-edit { display:block; }
+.se-card.editing .se-card-row { display:none; }
+.se-card-edit-field { margin-bottom:8px; }
+.se-card-edit-field label { font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; margin-bottom:2px; display:block; }
+.se-card-edit-field input, .se-card-edit-field textarea { width:100%; border:1px solid rgba(0,0,0,0.12); border-radius:6px; padding:6px 8px; font-size:0.85rem; font-family:inherit; }
+.se-card-edit-field textarea { resize:vertical; min-height:40px; }
+.se-card-edit-actions { display:flex; gap:8px; justify-content:flex-end; }
+.se-card-edit-btn { padding:6px 14px; border-radius:8px; border:none; font-size:0.8rem; font-weight:600; cursor:pointer; }
+.se-card-edit-save { background:var(--easy); color:#fff; }
+.se-card-edit-cancel { background:var(--accent-light); color:var(--text-secondary); }
+.se-card-edit-delete { background:none; color:var(--again); border:1px solid var(--again); margin-right:auto; }
+.card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.card-tag { display:inline-block; background:var(--accent-light); color:var(--accent); font-size:0.65rem; font-weight:600; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+.se-status { text-align:center; font-size:0.8rem; color:var(--text-light); padding:8px; }
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeUp 0.4s ease; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 380px) {
+  .cf-word { font-size: 1.7rem; }
+  .cb-main { font-size: 1.5rem; }
+  .stats-grid { gap: 8px; }
+  .stat-card { padding: 12px; }
+  .rating-btn { padding: 10px 2px 8px; min-height: 56px; }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="sync-indicator" id="syncIndicator"></div>
+
+<script>
+// ══════════════════════════════════════════
+// SUPABASE KONFIGURATION
+// ══════════════════════════════════════════
+// TODO: Replace with your Supabase project credentials before deploying.
+// See Dokumentation/06_Setup_Anleitung.md for where to find them.
+const SUPABASE_URL = "<YOUR_SUPABASE_URL>";           // e.g. https://xxxxxxxx.supabase.co
+const SUPABASE_KEY = "<YOUR_SUPABASE_ANON_KEY>";      // anon / publishable key
+if (SUPABASE_URL.startsWith("<") || SUPABASE_KEY.startsWith("<")) {
+  document.body.innerHTML = '<div style="font-family:system-ui;padding:2rem;max-width:640px;margin:3rem auto;background:#fff8e1;border:1px solid #f5c54a;border-radius:12px;color:#5c4300;"><h2 style="margin-top:0;">Supabase-Credentials fehlen</h2><p>Bitte <code>SUPABASE_URL</code> und <code>SUPABASE_KEY</code> in <code>vocabflow.html</code> setzen (Zeilen ca. 1106–1107).</p><p>Anleitung: <a href="../Dokumentation/06_Setup_Anleitung.md">Dokumentation/06_Setup_Anleitung.md</a></p></div>';
+  throw new Error("VocabFlow: Supabase credentials not configured.");
+}
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const CONFIG = {
+  newCardsPerDay: 10,
+  maxReviews: 50,
+  desiredRetention: 0.85,
+};
+
+// ══════════════════════════════════════════
+// GLOBAL STATE
+// ══════════════════════════════════════════
+let USER_NAME = null;
+let USER_DISPLAY = null;
+let USER_ROLE = null;
+let IS_GUEST = false;
+let SCORM_API = null;
+let ALL_SETS = [];         // Full vocab_sets from DB
+let ACTIVE_SET_IDS = [];   // IDs of sets the user has enabled
+let PROGRESS = {};         // card_uid -> state obj (keyed by `${setId}::${cardId}`)
+let STATS = { streak: 0, lastSession: null, todayReviews: 0, todayDate: null, todayNewSeen: 0, totalReviews: 0 };
+let TOTAL_PRACTICE_DAYS = 0;
+let AUTOPLAY_AUDIO = JSON.parse(localStorage.getItem('vocabflow_autoplay') || 'false');
+let QUEUE = [], QUEUE_INDEX = 0;
+let SESSION_STATS = null;
+
+// ══════════════════════════════════════════
+// FSRS ALGORITHMUS
+// ══════════════════════════════════════════
+const FSRS = {
+  w: [0.4, 1.0, 3.0, 8.0],
+  stabilityGrowth: 1.6,
+
+  schedule(card, rating) {
+    if (card.repetitions === 0) {
+      card.stability = this.w[rating - 1];
+      card.difficulty = Math.max(1, Math.min(10, 5.5 - (rating - 3) * 1.2));
+    } else if (rating === 1) {
+      card.stability = Math.max(0.4, card.stability * 0.2);
+      card.difficulty = Math.min(10, card.difficulty + 1.0);
+      card.lapses = (card.lapses || 0) + 1;
+    } else {
+      const df = 1 + (10 - card.difficulty) * 0.05;
+      const rb = [0, 0, 0.8, 1.0, 1.4][rating];
+      card.stability = card.stability * this.stabilityGrowth * df * rb;
+      card.difficulty = Math.max(1, card.difficulty - (rating - 2) * 0.15);
+    }
+    card.repetitions = (card.repetitions || 0) + 1;
+    const interval = Math.max(1, Math.round(
+      card.stability * Math.log(CONFIG.desiredRetention) / Math.log(0.9)
+    ));
+    card.interval = interval;
+    card.nextReview = addDays(today(), interval);
+    card.lastReview = today();
+    card.lastRating = rating;
+    return card;
+  },
+
+  previewIntervals(card) {
+    const intervals = [];
+    for (let r = 1; r <= 4; r++) {
+      const clone = JSON.parse(JSON.stringify(card));
+      this.schedule(clone, r);
+      intervals.push(clone.interval);
+    }
+    return intervals;
+  }
+};
+
+// ══════════════════════════════════════════
+// HILFSFUNKTIONEN
+// ══════════════════════════════════════════
+function today() { return new Date().toISOString().slice(0, 10); }
+function addDays(dateStr, days) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function daysBetween(a, b) {
+  const da = new Date(a + 'T12:00:00');
+  const db = new Date(b + 'T12:00:00');
+  return Math.round((db - da) / 86400000);
+}
+function formatInterval(days) {
+  if (days < 1) return "< 1 Tag";
+  if (days === 1) return "1 Tag";
+  if (days < 30) return days + " Tage";
+  if (days < 365) return Math.round(days / 30) + " Mon.";
+  return (days / 365).toFixed(1) + " J.";
+}
+function cardUid(setId, cardId) { return `${setId}::${cardId}`; }
+function freshCardState() {
+  return { stability: 0, difficulty: 5, repetitions: 0, interval: 0,
+    nextReview: null, lastReview: null, lastRating: null, lapses: 0 };
+}
+function showSync(text, isError = false) {
+  const el = document.getElementById('syncIndicator');
+  el.textContent = text;
+  el.classList.toggle('error', isError);
+  el.classList.add('visible');
+  clearTimeout(showSync._t);
+  showSync._t = setTimeout(() => el.classList.remove('visible'), 1800);
+}
+
+// ══════════════════════════════════════════
+// SUPABASE I/O
+// ══════════════════════════════════════════
+async function loadAllSets() {
+  let query = sb.from('vocab_sets').select('*').eq('archived', false);
+  // Students only see published sets
+  if (USER_ROLE !== 'teacher') query = query.eq('published', true);
+  const { data, error } = await query.order('name');
+  if (error) throw error;
+  return data || [];
+}
+
+async function checkTeacher(name) {
+  const { data, error } = await sb.from('teachers').select('display_name').eq('user_name', name).maybeSingle();
+  if (error) { console.warn('Teacher check failed:', error); return null; }
+  return data;
+}
+
+async function loadUserSets(name) {
+  if (IS_GUEST) return []; // Gast-Modus: DB nicht abfragen
+  const { data, error } = await sb.from('user_sets').select('set_id').eq('user_name', name);
+  if (error) throw error;
+  return (data || []).map(r => r.set_id);
+}
+
+async function toggleUserSet(name, setId, enable) {
+  if (IS_GUEST) return; // Gast-Modus: nicht in DB schreiben
+  await callWrite(enable ? 'activate_set' : 'deactivate_set', name, { set_id: setId });
+}
+
+async function loadProgress(name) {
+  if (IS_GUEST) {
+    STATS.streak = 0;
+    STATS.lastSession = null;
+    STATS.todayReviews = 0;
+    STATS.todayNewSeen = 0;
+    STATS.todayDate = today();
+    return {};
+  }
+  const { data, error } = await sb.from('progress').select('*').eq('user_name', name);
+  if (error) throw error;
+  const map = {};
+  const reviewDays = new Set();
+  const t = today();
+  let todayNewSeen = 0;
+  let todayReviews = 0;
+  for (const row of (data || [])) {
+    map[cardUid(row.set_id, row.card_id)] = {
+      stability: Number(row.stability) || 0,
+      difficulty: Number(row.difficulty) || 5,
+      repetitions: row.repetitions || 0,
+      interval: row.interval_days || 0,
+      nextReview: row.next_review,
+      lastReview: row.last_review,
+      lastRating: row.last_rating,
+      lapses: row.lapses || 0,
+    };
+    if (row.last_review) {
+      reviewDays.add(row.last_review);
+      if (row.last_review === t) {
+        todayReviews++;
+        if (row.repetitions === 1) todayNewSeen++;
+      }
+    }
+  }
+  TOTAL_PRACTICE_DAYS = reviewDays.size;
+
+  // Compute streak from DB: count consecutive days backwards from today
+  const sortedDays = Array.from(reviewDays).sort().reverse();
+  let streak = 0;
+  if (sortedDays.length > 0) {
+    let expected = t;
+    // If the user hasn't practiced today, start from yesterday
+    if (sortedDays[0] !== t) {
+      const y = new Date(t);
+      y.setDate(y.getDate() - 1);
+      expected = y.toISOString().slice(0, 10);
+    }
+    for (const d of sortedDays) {
+      if (d === expected) {
+        streak++;
+        const prev = new Date(expected);
+        prev.setDate(prev.getDate() - 1);
+        expected = prev.toISOString().slice(0, 10);
+      } else if (d < expected) {
+        break;
+      }
+    }
+  }
+
+  STATS.streak = streak;
+  STATS.lastSession = sortedDays.length > 0 ? sortedDays[0] : null;
+  STATS.todayReviews = todayReviews;
+  STATS.todayNewSeen = todayNewSeen;
+  STATS.todayDate = t;
+
+  return map;
+}
+
+async function saveCardProgress(name, setId, cardId, s) {
+  if (IS_GUEST) return; // Gast-Modus: nicht in DB schreiben
+  const payload = {
+    set_id: setId,
+    card_id: cardId,
+    stability: s.stability,
+    difficulty: s.difficulty,
+    repetitions: s.repetitions,
+    interval_days: s.interval,
+    next_review: s.nextReview,
+    last_review: s.lastReview,
+    last_rating: s.lastRating,
+    lapses: s.lapses || 0,
+  };
+  await callWrite('save_progress', name, payload);
+}
+
+async function callWrite(action, userName, payload) {
+  const res = await fetch(SUPABASE_URL + '/functions/v1/vocab-write', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+    },
+    body: JSON.stringify({ action, user_name: userName, payload }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error('vocab-write ' + res.status + ': ' + body.slice(0, 200));
+  }
+  return res.json();
+}
+
+// ══════════════════════════════════════════
+// BOOTSTRAP
+// ══════════════════════════════════════════
+const app = document.getElementById('app');
+
+function renderLoader(text = 'Lädt…') {
+  app.innerHTML = `
+    <div class="loader">
+      <div class="loader-spinner"></div>
+      <div class="loader-text">${text}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// SCORM 1.2 API discovery and bridge
+// ══════════════════════════════════════════
+function findScormAPI(win) {
+  let tries = 0;
+  while (win && !win.API && win.parent && win.parent !== win && tries < 500) {
+    tries++;
+    win = win.parent;
+  }
+  return (win && win.API) || null;
+}
+
+function getScormAPI() {
+  let api = findScormAPI(window);
+  if (!api && window.opener) api = findScormAPI(window.opener);
+  return api;
+}
+
+function scormGet(key) {
+  if (!SCORM_API) return '';
+  try { return SCORM_API.LMSGetValue(key) || ''; } catch (e) { return ''; }
+}
+
+function scormSet(key, value) {
+  if (!SCORM_API) return false;
+  try {
+    const ok = SCORM_API.LMSSetValue(key, String(value));
+    return ok === 'true' || ok === true;
+  } catch (e) { return false; }
+}
+
+function scormCommit() {
+  if (!SCORM_API) return;
+  try { SCORM_API.LMSCommit(''); } catch (e) {}
+}
+
+function getMoodleUserId() {
+  // Walk up frames to find Moodle's M.cfg.userId (camelCase!)
+  try {
+    let win = window;
+    for (let i = 0; i < 10; i++) {
+      try {
+        if (win.M && win.M.cfg && win.M.cfg.userId) return String(win.M.cfg.userId);
+      } catch (e) {}
+      if (win === win.parent) break;
+      win = win.parent;
+    }
+  } catch (e) {}
+  try {
+    if (window.top.M && window.top.M.cfg && window.top.M.cfg.userId) {
+      return String(window.top.M.cfg.userId);
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function boot() {
+  SCORM_API = getScormAPI();
+
+  if (SCORM_API) {
+    try { SCORM_API.LMSInitialize(''); } catch (e) {}
+  }
+
+  // Primary: get numeric Moodle user ID from M.cfg (consistent with widget)
+  const moodleId = getMoodleUserId();
+  if (moodleId) {
+    USER_NAME = `moodle_${moodleId}`;
+    // Use SCORM for display name only
+    const studentName = scormGet('cmi.core.student_name');
+    if (studentName && studentName.includes(',')) {
+      const [last, first] = studentName.split(',').map(s => s.trim());
+      USER_DISPLAY = `${first} ${last}`.trim();
+    } else if (studentName) {
+      USER_DISPLAY = studentName;
+    } else {
+      USER_DISPLAY = `User ${moodleId}`;
+    }
+    USER_ROLE = 'student';
+  }
+
+  // SCORM session management (independent of user ID source)
+  if (SCORM_API && USER_NAME) {
+    scormSet('cmi.core.lesson_status', 'incomplete');
+    scormCommit();
+    window.addEventListener('beforeunload', () => {
+      try { SCORM_API.LMSFinish(''); } catch (e) {}
+    });
+  }
+
+  // Fallback for local/dev: prompt for name if no Moodle ID
+  if (!USER_NAME) {
+    const devUser = localStorage.getItem('vocabflow_dev_user');
+    if (devUser) {
+      USER_NAME = `dev_${devUser}`;
+      USER_DISPLAY = devUser;
+      USER_ROLE = 'student';
+    } else {
+      renderDevLogin();
+      return;
+    }
+  }
+
+  await loadForUser();
+}
+
+async function loadForUser() {
+  renderLoader('Lade Vokabelsets…');
+  try {
+    const [sets, active, prog, teacher] = await Promise.all([
+      loadAllSets(),
+      loadUserSets(USER_NAME),
+      loadProgress(USER_NAME),
+      checkTeacher(USER_NAME),
+    ]);
+    ALL_SETS = sets;
+    ACTIVE_SET_IDS = active;
+    PROGRESS = prog;
+    if (teacher) {
+      USER_ROLE = 'teacher';
+      if (teacher.display_name) USER_DISPLAY = teacher.display_name;
+    }
+    // STATS are now computed from DB in loadProgress() — no localStorage needed
+
+    if (ACTIVE_SET_IDS.length === 0 && sets.length > 0) {
+      renderLibrary(true);
+    } else {
+      renderDashboard();
+    }
+  } catch (e) {
+    console.error(e);
+    app.innerHTML = `<div class="loader"><div class="loader-text" style="color:var(--again)">Fehler beim Laden: ${e.message}<br><br><button class="btn-secondary" onclick="boot()">Nochmal versuchen</button></div></div>`;
+  }
+}
+
+// Stats are computed from DB — no localStorage persistence needed
+
+// ══════════════════════════════════════════
+// DEV LOGIN (fallback when not launched via SCORM)
+// ══════════════════════════════════════════
+function renderDevLogin() {
+  app.innerHTML = `
+    <div class="fade-in welcome">
+      <div class="welcome-logo">VocabFlow</div>
+      <div class="welcome-tag">Dein Vokabeltrainer mit Spaced Repetition<button class="info-btn" onclick="showSpacedRepetitionInfo()" title="Was ist Spaced Repetition?">i</button></div>
+      <button class="btn-start" style="margin-bottom:18px" onclick="startAsGuest()">Als Gast starten</button>
+      <div class="name-hint" style="margin-bottom:18px;text-align:center">Kein Login nötig — dein Fortschritt wird nur für diese Sitzung gespeichert.</div>
+      <details style="width:100%;max-width:340px">
+        <summary style="cursor:pointer;font-size:0.82rem;color:var(--text-secondary);text-align:center;list-style:none;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:0.7rem">▸</span> Mit Name anmelden (Fortschritt bleibt erhalten)</summary>
+        <form class="name-form" onsubmit="submitDevLogin(event)" style="margin-top:12px">
+          <input id="dev-name" type="text" autocomplete="off" placeholder="z. B. malte" required>
+          <button type="submit" class="btn-start">Starten</button>
+        </form>
+      </details>
+    </div>`;
+}
+
+function startAsGuest() {
+  IS_GUEST = true;
+  USER_NAME = 'guest'; // wird nie in DB geschrieben (IS_GUEST-Guards)
+  USER_DISPLAY = 'Gast';
+  USER_ROLE = 'student';
+  loadForUser();
+}
+
+function submitDevLogin(e) {
+  e.preventDefault();
+  const name = document.getElementById('dev-name').value.trim();
+  if (!name) return;
+  localStorage.setItem('vocabflow_dev_user', name);
+  boot();
+}
+
+// ══════════════════════════════════════════
+// SPACED REPETITION INFO MODAL
+// ══════════════════════════════════════════
+function showSpacedRepetitionInfo() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-title">Was ist Spaced Repetition?</div>
+      <div class="modal-text">
+        <strong>Spaced Repetition</strong> bedeutet: Du wiederholst Vokabeln genau dann,
+        wenn du sie fast vergessen hast. Karten, die du gut kannst, kommen seltener dran;
+        Karten, die du schwer findest, häufiger.
+      </div>
+      <div class="modal-text">
+        So lernst du in kurzer Zeit deutlich mehr und vergisst weniger — jeden Tag
+        ein bisschen ist besser als einmal viel. VocabFlow plant deine Wiederholungen
+        automatisch nach einem wissenschaftlichen Algorithmus (FSRS).
+      </div>
+      <a class="modal-link" href="https://ncase.me/remember/de.html" target="_blank" rel="noopener">
+        📖 Webcomic: Der Weg zum perfekten Gedächtnis
+      </a>
+      <button class="modal-close" onclick="this.closest('.modal-backdrop').remove()">Verstanden</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function showHowItWorksInfo() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-title">Wie funktioniert VocabFlow?</div>
+      <div class="modal-text">
+        Du lernst jeden Tag <strong>10 neue Karten</strong> plus alle Karten, die heute
+        zur Wiederholung fällig sind. Die Wiederholungen plant VocabFlow automatisch —
+        du musst dich um nichts kümmern.
+      </div>
+      <div class="modal-text">
+        <strong>Neues Lernset aktivieren?</strong> Keine Sorge, dass das zu viel wird.
+        Egal wie viele Sets du anhakst, es kommen trotzdem nur 10 neue Karten pro Tag
+        dazu. Die restlichen warten geduldig, bis sie dran sind.
+      </div>
+      <div class="modal-text">
+        Willst du an einem Tag mehr lernen, tippst du unten auf „+ Heute 10 neue Karten
+        dazulernen". Aber: Regelmäßig wenig bringt mehr als selten viel.
+      </div>
+      <details style="margin-top:12px;text-align:left;">
+        <summary style="cursor:pointer;font-weight:700;font-size:0.85rem;color:var(--text);user-select:none;">Hinweise zum Datenschutz</summary>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--subtext);line-height:1.5;">
+          <p>VocabFlow ist ein Vokabeltrainer, der deinen Lernfortschritt automatisch verwaltet. Damit das funktioniert, werden folgende Daten gespeichert:</p>
+          <p><strong>Was wird gespeichert?</strong></p>
+          <ul style="margin:4px 0 8px 16px;">
+            <li>Deine Moodle-ID (eine Nummer — kein Name, keine E-Mail)</li>
+            <li>Welche Vokabelsets du aktiviert hast</li>
+            <li>Dein Lernfortschritt pro Karte (wann wiederholt, wie gut bewertet)</li>
+          </ul>
+          <p><strong>Was wird NICHT gespeichert?</strong></p>
+          <ul style="margin:4px 0 8px 16px;">
+            <li>Dein Name, deine E-Mail oder andere persönliche Daten</li>
+            <li>Dein Passwort oder deine Moodle-Zugangsdaten</li>
+          </ul>
+          <p><strong>Wo werden die Daten gespeichert?</strong></p>
+          <p>Auf einem Server in Frankfurt (Deutschland), betrieben von Supabase Inc. Ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO liegt vor.</p>
+          <p><strong>Wie lange?</strong></p>
+          <p>Dein Lernfortschritt wird automatisch gelöscht, wenn du VocabFlow länger als ein Jahr nicht mehr nutzt.</p>
+          <p style="margin-top:8px;">Die Verarbeitung erfolgt auf Grundlage des schulischen Bildungsauftrags (Art. 6 Abs. 1 lit. e DSGVO).</p>
+          <p style="margin-top:8px;">Fragen? Wende dich an Herrn Ohlsen.</p>
+        </div>
+      </details>
+      <button class="modal-close" onclick="this.closest('.modal-backdrop').remove()">Verstanden</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+// ══════════════════════════════════════════
+// LIBRARY
+// ══════════════════════════════════════════
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+const CEFR_RANK = { A1:1, A2:2, B1:3, B2:4, C1:5, C2:6 };
+function setSortKey(s) {
+  const cefr = CEFR_RANK[s.level] || 99;
+  const gradeNum = parseInt((s.grade_level || '').match(/\d+/)?.[0] || '99', 10);
+  return [cefr, gradeNum, s.name || ''];
+}
+function compareSets(a, b) {
+  const ka = setSortKey(a), kb = setSortKey(b);
+  if (ka[0] !== kb[0]) return ka[0] - kb[0];
+  if (ka[1] !== kb[1]) return ka[1] - kb[1];
+  return ka[2].localeCompare(kb[2], 'de');
+}
+
+const SUBJECT_ORDER = ['Englisch'];
+const CATEGORY_ORDER = ['Oxford 5000', 'Basisvokabular', 'Akademisches Vokabular'];
+
+function renderSetCard(s, isActive) {
+  const count = (s.cards || []).length;
+  const metaParts = [`${count} Karten`];
+  if (s.level) metaParts.push(s.level);
+  if (s.language) metaParts.push(s.language);
+  const badges = [];
+  if (s.subject) badges.push(escapeHtml(s.subject));
+  if (s.grade_level) badges.push('Jg. ' + escapeHtml(s.grade_level));
+  return `
+    <div class="set-card ${isActive ? 'active' : ''}" onclick="toggleSet('${s.id}')" data-setid="${s.id}">
+      <div class="set-info">
+        <div class="set-name">${escapeHtml(s.name)}</div>
+        <div class="set-meta">${metaParts.join(' · ')}</div>
+        ${s.description ? `<div class="set-desc">${escapeHtml(s.description)}</div>` : ''}
+        ${badges.length ? `<div class="set-badges">${badges.map(b => `<span class="set-badge">${b}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="set-toggle"></div>
+    </div>`;
+}
+
+function renderLibrary(isFirstTime = false) {
+  const active = new Set(ACTIVE_SET_IDS);
+  const sub = isFirstTime
+    ? 'Wähle aus, welche Vokabelsets du lernen möchtest. Du kannst das jederzeit ändern.'
+    : 'Aktiviere oder deaktiviere Vokabelsets für dein persönliches Deck.';
+
+  // Two-level grouping: subject -> category -> sets
+  const subjectMap = new Map();
+  for (const s of ALL_SETS) {
+    const subj = s.subject || 'Sonstige';
+    const cat = s.category || 'Allgemein';
+    if (!subjectMap.has(subj)) subjectMap.set(subj, new Map());
+    const catMap = subjectMap.get(subj);
+    if (!catMap.has(cat)) catMap.set(cat, []);
+    catMap.get(cat).push(s);
+  }
+  const sortedSubjects = [...subjectMap.keys()].sort((a, b) => {
+    if (a === 'Sonstige') return 1;
+    if (b === 'Sonstige') return -1;
+    const ia = SUBJECT_ORDER.indexOf(a), ib = SUBJECT_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b, 'de');
+  });
+  const sortCategories = (cats) => cats.sort((a, b) => {
+    const ia = CATEGORY_ORDER.indexOf(a), ib = CATEGORY_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b, 'de');
+  });
+
+  const setListHtml = ALL_SETS.length === 0
+    ? '<div class="empty-state"><span class="empty-emoji">📚</span><div class="empty-title">Keine Sets verfügbar</div><div class="empty-text">Es sind noch keine Vokabelsets in der Datenbank angelegt.</div></div>'
+    : sortedSubjects.map(subj => {
+        const catMap = subjectMap.get(subj);
+        const cats = sortCategories([...catMap.keys()]);
+        const catsHtml = cats.map(cat => {
+          const sets = catMap.get(cat).sort(compareSets);
+          return `
+            <details class="lib-cat" open>
+              <summary class="lib-cat-summary">${escapeHtml(cat)}<span class="lib-cat-count">${sets.length}</span></summary>
+              <div class="lib-cat-body">
+                ${sets.map(s => renderSetCard(s, active.has(s.id))).join('')}
+              </div>
+            </details>`;
+        }).join('');
+        return `
+          <div class="lib-subject">${escapeHtml(subj)}</div>
+          ${catsHtml}`;
+      }).join('');
+
+  app.innerHTML = `
+    <div class="fade-in">
+      ${isFirstTime ? '' : '<button class="lib-back" onclick="renderDashboard()">← Zurück</button>'}
+      <div class="lib-title">Bibliothek</div>
+      <div class="lib-sub">${sub}</div>
+      <div id="setList">${setListHtml}</div>
+      ${isFirstTime && ALL_SETS.length > 0
+        ? `<button class="btn-start" style="margin-top:16px" onclick="finishLibrarySetup()">Fertig</button>`
+        : ''}
+    </div>`;
+}
+
+async function toggleSet(setId) {
+  const idx = ACTIVE_SET_IDS.indexOf(setId);
+  const enable = idx === -1;
+  // Optimistic UI
+  if (enable) ACTIVE_SET_IDS.push(setId);
+  else ACTIVE_SET_IDS.splice(idx, 1);
+  const el = document.querySelector(`[data-setid="${setId}"]`);
+  if (el) el.classList.toggle('active', enable);
+  showSync(enable ? 'Hinzugefügt…' : 'Entfernt…');
+  try {
+    await toggleUserSet(USER_NAME, setId, enable);
+    showSync('Gespeichert ✓');
+  } catch (e) {
+    console.error(e);
+    showSync('Fehler beim Speichern', true);
+    if (enable) ACTIVE_SET_IDS = ACTIVE_SET_IDS.filter(id => id !== setId);
+    else ACTIVE_SET_IDS.push(setId);
+    if (el) el.classList.toggle('active', !enable);
+  }
+}
+
+function finishLibrarySetup() {
+  if (ACTIVE_SET_IDS.length === 0) {
+    showSync('Wähle mindestens ein Set', true);
+    return;
+  }
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════
+// DECK BUILDING
+// ══════════════════════════════════════════
+function getActiveCards() {
+  const list = [];
+  for (const s of ALL_SETS) {
+    if (!ACTIVE_SET_IDS.includes(s.id)) continue;
+    for (const c of (s.cards || [])) {
+      list.push({ ...c, setId: s.id, setName: s.name, uid: cardUid(s.id, c.id) });
+    }
+  }
+  return list;
+}
+
+function getCardCounts() {
+  const cards = getActiveCards();
+  const counts = { total: cards.length, fresh: 0, learning: 0, familiar: 0, mastered: 0, dueToday: 0 };
+  const t = today();
+  for (const c of cards) {
+    const cs = PROGRESS[c.uid];
+    if (!cs || cs.repetitions === 0) { counts.fresh++; continue; }
+    if (cs.interval <= 1) counts.learning++;
+    else if (cs.interval <= 21) counts.familiar++;
+    else counts.mastered++;
+    if (cs.nextReview && cs.nextReview <= t) counts.dueToday++;
+  }
+  return counts;
+}
+
+function getDueTomorrow() {
+  const cards = getActiveCards();
+  const tom = addDays(today(), 1);
+  let count = 0;
+  for (const c of cards) {
+    const cs = PROGRESS[c.uid];
+    if (cs && cs.repetitions > 0 && cs.nextReview && cs.nextReview <= tom) count++;
+  }
+  return count;
+}
+
+function countOverdue() {
+  const cards = getActiveCards();
+  const t = today();
+  let count = 0;
+  for (const c of cards) {
+    const cs = PROGRESS[c.uid];
+    if (cs && cs.repetitions > 0 && cs.nextReview && cs.nextReview < t) count++;
+  }
+  return count;
+}
+
+function isBacklogBrakeActive() {
+  return countOverdue() > CONFIG.newCardsPerDay * 1.5;
+}
+
+function buildQueue(bonusNew = 0) {
+  const cards = getActiveCards();
+  const queue = [];
+  const t = today();
+
+  const reviews = [];
+  for (const c of cards) {
+    const cs = PROGRESS[c.uid];
+    if (cs && cs.repetitions > 0 && cs.nextReview && cs.nextReview <= t) {
+      reviews.push(c);
+    }
+  }
+  reviews.sort((a, b) => (PROGRESS[a.uid].nextReview || '').localeCompare(PROGRESS[b.uid].nextReview || ''));
+  queue.push(...reviews.slice(0, CONFIG.maxReviews));
+
+  // Backlog-Bremse: bei zu vielen überfälligen Reviews keine neuen Karten einführen
+  // (bonusNew ist bewusste User-Aktion und umgeht die Bremse)
+  const brakeActive = bonusNew === 0 && isBacklogBrakeActive();
+  const maxNew = brakeActive ? 0 : Math.max(0, CONFIG.newCardsPerDay - (STATS.todayNewSeen || 0)) + bonusNew;
+  if (maxNew > 0) {
+    // Round-robin: neue Karten gleichmäßig aus allen aktiven Sets ziehen.
+    // Bei mehr Sets als Tagesbudget rotiert die Reihenfolge täglich, damit
+    // auch hintere Sets drankommen, ohne dass vordere blockieren.
+    const freshBySet = new Map();
+    const setOrder = [];
+    for (const c of cards) {
+      const cs = PROGRESS[c.uid];
+      if (cs && cs.repetitions > 0) continue;
+      if (!freshBySet.has(c.setId)) {
+        freshBySet.set(c.setId, []);
+        setOrder.push(c.setId);
+      }
+      freshBySet.get(c.setId).push(c);
+    }
+    if (setOrder.length > 0) {
+      const dayOffset = Math.floor(Date.now() / 86400000) % setOrder.length;
+      const rotated = [...setOrder.slice(dayOffset), ...setOrder.slice(0, dayOffset)];
+      let newCount = 0;
+      let round = 0;
+      while (newCount < maxNew) {
+        let addedThisRound = 0;
+        for (const sid of rotated) {
+          if (newCount >= maxNew) break;
+          const pool = freshBySet.get(sid);
+          if (round < pool.length) {
+            queue.push(pool[round]);
+            newCount++;
+            addedThisRound++;
+          }
+        }
+        if (addedThisRound === 0) break;
+        round++;
+      }
+    }
+  }
+  return queue;
+}
+
+function countFreshRemaining() {
+  const cards = getActiveCards();
+  let count = 0;
+  for (const c of cards) {
+    const cs = PROGRESS[c.uid];
+    if (!cs || cs.repetitions === 0) count++;
+  }
+  return count;
+}
+
+// ══════════════════════════════════════════
+// SET MANAGER (Teacher UI)
+// ══════════════════════════════════════════
+let SM_ALL_SETS = []; // All sets including archived, for manager view
+let SM_USER_COUNTS = {}; // set_id -> number of active users
+let SM_TEACHERS = {}; // user_name -> display_name
+let SM_FILTER = 'mine'; // 'mine' | 'all'
+let EDITING_SET = null; // set being edited
+
+async function loadManagerData() {
+  const [setsRes, countsRes, teachersRes] = await Promise.all([
+    sb.from('vocab_sets').select('id,name,description,language,level,subject,category,grade_level,has_reverse,published,owner_id,archived,updated_at,cards').order('name'),
+    sb.from('user_sets').select('set_id'),
+    sb.from('teachers').select('user_name,display_name'),
+  ]);
+  if (setsRes.error) throw setsRes.error;
+  SM_ALL_SETS = setsRes.data || [];
+
+  // Count users per set
+  SM_USER_COUNTS = {};
+  for (const r of (countsRes.data || [])) {
+    SM_USER_COUNTS[r.set_id] = (SM_USER_COUNTS[r.set_id] || 0) + 1;
+  }
+
+  // Build teacher name lookup
+  SM_TEACHERS = {};
+  for (const t of (teachersRes.data || [])) {
+    SM_TEACHERS[t.user_name] = t.display_name || t.user_name;
+  }
+}
+
+function getOwnerDisplay(ownerId) {
+  if (!ownerId) return 'Unbekannt';
+  return SM_TEACHERS[ownerId] || ownerId;
+}
+
+async function renderSetManager() {
+  renderLoader('Lade Set-Verwaltung…');
+  try {
+    await loadManagerData();
+  } catch (e) {
+    console.error(e);
+    app.innerHTML = `<div class="loader"><div class="loader-text" style="color:var(--again)">Fehler: ${e.message}<br><br><button class="btn-secondary" onclick="renderDashboard()">Zurück</button></div></div>`;
+    return;
+  }
+
+  renderSetManagerView();
+}
+
+function renderSetManagerView() {
+  const filtered = SM_ALL_SETS.filter(s => {
+    if (s.archived) return false;
+    if (SM_FILTER === 'mine') return s.owner_id === USER_NAME;
+    return true;
+  });
+
+  const setListHtml = filtered.length === 0
+    ? `<div class="se-status">${SM_FILTER === 'mine' ? 'Du hast noch keine eigenen Sets.' : 'Keine Sets vorhanden.'}</div>`
+    : filtered.map(s => {
+        const count = (s.cards || []).length;
+        const users = SM_USER_COUNTS[s.id] || 0;
+        const isMine = s.owner_id === USER_NAME;
+        const metaParts = [`${count} Karten`, `${users} Nutzer`];
+        if (s.level) metaParts.push(s.level);
+        if (s.grade_level) metaParts.push('Jg. ' + s.grade_level);
+        return `
+          <div class="sm-set ${isMine ? 'mine' : 'readonly'}" onclick="${isMine ? `renderSetEditor('${s.id}')` : `renderSetPreview('${s.id}')`}">
+            <div class="sm-set-top">
+              <div class="sm-set-info">
+                <div class="sm-set-name">${escapeHtml(s.name)}</div>
+                <div class="sm-set-meta">${metaParts.join(' · ')}</div>
+                <div class="sm-set-owner">${isMine ? (s.published ? '✓ Veröffentlicht' : '⏳ Entwurf') : 'Erstellt von ' + escapeHtml(getOwnerDisplay(s.owner_id))}</div>
+              </div>
+              <div class="sm-set-chevron">▶</div>
+            </div>
+          </div>`;
+      }).join('');
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <button class="lib-back" onclick="renderDashboard()">← Zurück</button>
+      <div class="sm-header">
+        <div class="sm-title">Sets verwalten</div>
+        <button class="sm-btn-new" onclick="createNewSet()">+ Neues Set</button>
+      </div>
+      <div class="sm-filter">
+        <button class="sm-filter-btn ${SM_FILTER === 'mine' ? 'active' : ''}" onclick="SM_FILTER='mine';renderSetManagerView()">Meine Sets</button>
+        <button class="sm-filter-btn ${SM_FILTER === 'all' ? 'active' : ''}" onclick="SM_FILTER='all';renderSetManagerView()">Alle Sets</button>
+      </div>
+      <div id="smSetList">${setListHtml}</div>
+    </div>`;
+}
+
+function renderSetPreview(setId) {
+  const s = SM_ALL_SETS.find(x => x.id === setId);
+  if (!s) return;
+  const cards = s.cards || [];
+  const owner = getOwnerDisplay(s.owner_id);
+  const metaParts = [];
+  if (s.subject) metaParts.push(s.subject);
+  if (s.level) metaParts.push(s.level);
+  if (s.grade_level) metaParts.push('Jg. ' + s.grade_level);
+  if (s.category) metaParts.push(s.category);
+
+  const cardListHtml = cards.length === 0
+    ? '<div class="se-status">Keine Karten vorhanden.</div>'
+    : cards.map((c, i) => {
+        const tags = c.tags || [];
+        const tagsHtml = tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
+        const hasAudio = c.audio_url || c.example_audio_url;
+        return `
+          <div class="se-card" style="cursor:default;">
+            <div class="se-card-header">
+              <span class="se-card-num">#${i + 1}</span>
+              ${hasAudio ? '<span title="Audio hinterlegt" style="margin-left:4px;">🔊</span>' : ''}
+            </div>
+            <div class="se-card-fields">
+              <div><strong>${escapeHtml(c.front_main || '')}</strong>${c.front_sub ? ` <span style="color:var(--text-light);font-size:0.85rem;">${escapeHtml(c.front_sub)}</span>` : ''}</div>
+              <div style="color:var(--text-light);">${escapeHtml(c.back_main || '')}</div>
+              ${c.example ? `<div style="font-size:0.8rem;color:var(--text-light);font-style:italic;margin-top:2px;">${escapeHtml(c.example)}</div>` : ''}
+            </div>
+            ${tagsHtml}
+          </div>`;
+      }).join('');
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <button class="lib-back" onclick="renderSetManagerView()">← Zurück</button>
+      <div class="se-header">
+        <div class="se-title">${escapeHtml(s.name)}</div>
+        <div style="font-size:0.85rem;color:var(--text-light);margin-top:4px;">Erstellt von ${escapeHtml(owner)} · ${cards.length} Karten${metaParts.length ? ' · ' + metaParts.join(' · ') : ''}</div>
+        <div style="margin-top:6px;font-size:0.8rem;color:${s.published ? '#2d7a3a' : '#8a6d00'};">${s.published ? '✓ Veröffentlicht' : '⏳ Entwurf'}</div>
+      </div>
+      ${s.description ? `<div style="margin:12px 0;padding:12px 16px;background:var(--card-bg);border-radius:12px;font-size:0.9rem;color:var(--text-light);">${escapeHtml(s.description)}</div>` : ''}
+      <div class="se-card-list">${cardListHtml}</div>
+    </div>`;
+}
+
+async function createNewSet() {
+  const newId = 'set_' + Date.now();
+  const newSet = {
+    id: newId,
+    name: 'Neues Set',
+    description: '',
+    language: 'en',
+    level: '',
+    subject: 'Englisch',
+    category: '',
+    grade_level: '',
+    has_reverse: false,
+    owner_id: USER_NAME,
+    archived: false,
+    cards: [],
+  };
+
+  renderLoader('Erstelle Set…');
+  try {
+    const res = await callSetManager('create', { set: newSet });
+    if (res.error) throw new Error(res.error);
+    renderSetEditor(newId);
+  } catch (e) {
+    console.error(e);
+    showSync('Fehler: ' + e.message, true);
+    renderSetManager();
+  }
+}
+
+async function callSetManager(action, data = {}) {
+  const res = await fetch(SUPABASE_URL + '/functions/v1/set-manager', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+    },
+    body: JSON.stringify({ action, user_name: USER_NAME, ...data }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Server error');
+  return json;
+}
+
+// ══════════════════════════════════════════
+// SET EDITOR
+// ══════════════════════════════════════════
+let EDITOR_SET = null;
+let EDITOR_DIRTY = false;
+let EDITOR_SAVE_TIMER = null;
+let EDITOR_USER_COUNT = 0; // How many users have this set activated
+
+async function renderSetEditor(setId) {
+  renderLoader('Lade Set…');
+  try {
+    // Reload fresh data for this set + user count
+    const [setRes, countRes] = await Promise.all([
+      sb.from('vocab_sets').select('*').eq('id', setId).single(),
+      sb.from('user_sets').select('user_name').eq('set_id', setId),
+    ]);
+    if (setRes.error) throw setRes.error;
+    const data = setRes.data;
+    if (data.owner_id !== USER_NAME) {
+      showSync('Kein Zugriff — du bist nicht der Owner', true);
+      renderSetManager();
+      return;
+    }
+    EDITOR_SET = data;
+    EDITOR_USER_COUNT = (countRes.data || []).length;
+    EDITOR_DIRTY = false;
+    renderEditorView();
+  } catch (e) {
+    console.error(e);
+    app.innerHTML = `<div class="loader"><div class="loader-text" style="color:var(--again)">Fehler: ${e.message}<br><br><button class="btn-secondary" onclick="renderSetManager()">Zurück</button></div></div>`;
+  }
+}
+
+function renderEditorView() {
+  const s = EDITOR_SET;
+  const cards = s.cards || [];
+
+  const cardsHtml = cards.length === 0
+    ? '<div class="se-status">Noch keine Karten. Füge Karten manuell hinzu oder nutze die KI-Generierung.</div>'
+    : cards.map((c, i) => {
+        const fm = c.front_main || '';
+        const bm = c.back_main || '';
+        const ex = c.example || '';
+        const fs = c.front_sub || '';
+        const tags = c.tags || [];
+        const hasAudio = !!(c.audio_url);
+        const hasExAudio = !!(c.example_audio_url);
+        const audioBadge = hasAudio ? `<span style="font-size:0.75rem;color:var(--easy);margin-left:4px" title="Audio hinterlegt${hasExAudio ? ' + Beispielsatz-Audio' : ''}">🔊</span>` : '';
+        const tagsHtml = tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
+        return `
+        <div class="se-card" id="card-${i}" data-idx="${i}">
+          <div class="se-card-row" onclick="toggleCardEdit(${i})">
+            <div class="se-card-front" style="min-width:0;">
+              <div>${escapeHtml(fm) || '—'}${fs ? ` <span style="color:var(--text-light);font-weight:400;font-size:0.8em">(${escapeHtml(fs)})</span>` : ''}${audioBadge}</div>
+              ${tagsHtml}
+            </div>
+            <div class="se-card-back">${escapeHtml(bm) || '—'}</div>
+            <div class="se-card-actions">
+              <button class="se-card-btn" onclick="event.stopPropagation();toggleCardEdit(${i})" title="Bearbeiten">✏️</button>
+            </div>
+          </div>
+          <div class="se-card-edit">
+            <div class="se-card-edit-field">
+              <label>Vorderseite (Wort/Phrase)</label>
+              <input id="cf-${i}" value="${escapeAttr(fm)}" />
+            </div>
+            <div class="se-card-edit-field">
+              <label>Wortart (optional)</label>
+              <input id="cs-${i}" value="${escapeAttr(fs)}" placeholder="z.B. verb, noun, adjective" />
+            </div>
+            <div class="se-card-edit-field">
+              <label>Rückseite (Übersetzung/Erklärung)</label>
+              <input id="cb-${i}" value="${escapeAttr(bm)}" />
+            </div>
+            <div class="se-card-edit-field">
+              <label>Beispielsatz (optional)</label>
+              <textarea id="ce-${i}">${escapeHtml(ex)}</textarea>
+            </div>
+            <div class="se-card-edit-field">
+              <label>Tags (kommagetrennt, optional)</label>
+              <input id="ct-${i}" value="${escapeAttr(tags.join(', '))}" placeholder="z.B. Einleitung, Stilmittel, Erzähltechnik" />
+            </div>
+            ${hasAudio ? `<div style="font-size:0.75rem;color:var(--text-light);padding:4px 0;">🔊 Audio hinterlegt${hasExAudio ? ' · Beispielsatz-Audio hinterlegt' : ''} — wird beim Bearbeiten beibehalten</div>` : ''}
+            <div class="se-card-edit-actions">
+              <button class="se-card-edit-btn se-card-edit-delete" onclick="deleteCard(${i})">Löschen</button>
+              <button class="se-card-edit-btn se-card-edit-cancel" onclick="toggleCardEdit(${i})">Abbrechen</button>
+              <button class="se-card-edit-btn se-card-edit-save" onclick="saveCardEdit(${i})">Speichern</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <button class="lib-back" onclick="exitEditor()">← Zurück zur Übersicht</button>
+      <div class="sm-header">
+        <div class="sm-title">Set bearbeiten</div>
+      </div>
+
+      <div class="se-meta">
+        <div class="se-field">
+          <label>Set-Name</label>
+          <input id="se-name" value="${escapeAttr(s.name || '')}" onchange="editorMetaChanged()" />
+        </div>
+        <div class="se-field">
+          <label>Beschreibung</label>
+          <textarea id="se-desc" onchange="editorMetaChanged()">${escapeHtml(s.description || '')}</textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div class="se-field" style="flex:1;">
+            <label>Fach</label>
+            <select id="se-subject" onchange="editorMetaChanged()">
+              <option value="">—</option>
+              <option value="Englisch" ${s.subject === 'Englisch' ? 'selected' : ''}>Englisch</option>
+              <option value="Französisch" ${s.subject === 'Französisch' ? 'selected' : ''}>Französisch</option>
+              <option value="Spanisch" ${s.subject === 'Spanisch' ? 'selected' : ''}>Spanisch</option>
+              <option value="Sonstige" ${s.subject === 'Sonstige' ? 'selected' : ''}>Sonstige</option>
+            </select>
+          </div>
+          <div class="se-field" style="flex:1;">
+            <label>Jahrgang</label>
+            <input id="se-grade" value="${escapeAttr(s.grade_level || '')}" onchange="editorMetaChanged()" placeholder="z.B. 7, 10, Oberstufe" />
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div class="se-field" style="flex:1;">
+            <label>Kategorie</label>
+            <input id="se-cat" value="${escapeAttr(s.category || '')}" onchange="editorMetaChanged()" placeholder="z.B. Oxford 5000, Green Line" />
+          </div>
+          <div class="se-field" style="flex:1;">
+            <label>Niveau</label>
+            <select id="se-level" onchange="editorMetaChanged()">
+              <option value="">—</option>
+              <option value="A1" ${s.level === 'A1' ? 'selected' : ''}>A1</option>
+              <option value="A2" ${s.level === 'A2' ? 'selected' : ''}>A2</option>
+              <option value="B1" ${s.level === 'B1' ? 'selected' : ''}>B1</option>
+              <option value="B2" ${s.level === 'B2' ? 'selected' : ''}>B2</option>
+              <option value="C1" ${s.level === 'C1' ? 'selected' : ''}>C1</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.12);">
+          <button onclick="${s.published ? 'togglePublish()' : ''}" style="flex:1;padding:10px 12px;border:none;cursor:${s.published ? 'pointer' : 'default'};font-size:0.85rem;font-weight:600;font-family:inherit;${s.published ? 'background:#fff;color:var(--text-light);' : 'background:#fff8e8;color:#8a6d00;'}">⏳ Entwurf</button>
+          <button onclick="${s.published ? '' : 'togglePublish()'}" style="flex:1;padding:10px 12px;border:none;border-left:1px solid rgba(0,0,0,0.12);cursor:${s.published ? 'default' : 'pointer'};font-size:0.85rem;font-weight:600;font-family:inherit;${s.published ? 'background:#e8f4e8;color:#2d7a3a;' : 'background:#fff;color:var(--text-light);'}">✓ Veröffentlicht</button>
+        </div>
+        <div style="text-align:center;font-size:0.75rem;color:var(--text-light);margin-top:6px;">
+          ${s.published
+            ? `SuS können dieses Set in der Bibliothek sehen${EDITOR_USER_COUNT > 0 ? ` · ${EDITOR_USER_COUNT} Nutzer aktiv` : ''}`
+            : 'Nur für dich sichtbar — SuS sehen dieses Set noch nicht'}
+        </div>
+      </div>
+
+      <div class="se-cards-header">
+        <div class="se-cards-title">Karten (${cards.length})</div>
+        <button class="se-btn-add" onclick="addCard()">+ Karte</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="se-btn-add" style="flex:1;text-align:center;" onclick="showImportDialog()">📋 JSON importieren</button>
+        <button class="se-btn-add" style="flex:1;text-align:center;" onclick="copyGeneratePrompt()">📎 KI-Prompt kopieren</button>
+      </div>
+      <details style="margin-bottom:14px;background:#f8f6ff;border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:0;">
+        <summary style="padding:10px 14px;cursor:pointer;font-size:0.8rem;font-weight:600;color:var(--accent);list-style:none;">Anleitung: Karten mit KI erstellen</summary>
+        <div style="padding:4px 14px 14px;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
+          <p style="margin:0 0 8px;font-weight:600;">So erstellst du schnell hochwertige Vokabelkarten:</p>
+          <ol style="margin:0 0 10px;padding-left:20px;">
+            <li style="margin-bottom:6px;"><strong>KI-Prompt kopieren</strong> — Klicke auf den Button oben. Der Prompt wird in deine Zwischenablage kopiert und enthält bereits das richtige Format und den Kontext dieses Sets.</li>
+            <li style="margin-bottom:6px;"><strong>In dein KI-Tool einfügen</strong> — Öffne ChatGPT, Claude oder ein anderes LLM und füge den Prompt ein.</li>
+            <li style="margin-bottom:6px;"><strong>Wortliste ergänzen</strong> — Ersetze den Platzhalter am Ende des Prompts durch deine Wörter. Du kannst:<br>
+              <span style="display:block;margin:4px 0 2px;">• Eine Wortliste eintippen (ein Wort pro Zeile)</span>
+              <span style="display:block;margin:2px 0;">• Ein <strong>Foto der Wortliste</strong> aus dem Lehrbuch hochladen — die KI erkennt die Wörter</span>
+              <span style="display:block;margin:2px 0;">• Die KI bitten, eine <strong>thematische Wortliste zu erstellen</strong> (z.B. "Erstelle 30 Vokabeln zum Thema Environment, B2-Niveau")</span>
+            </li>
+            <li style="margin-bottom:6px;"><strong>JSON-Ergebnis kopieren</strong> — Die KI gibt dir ein JSON-Array zurück. Kopiere es vollständig.</li>
+            <li style="margin-bottom:6px;"><strong>Hier importieren</strong> — Klicke auf "JSON importieren", füge das JSON ein und klicke "Importieren".</li>
+            <li style="margin-bottom:0;"><strong>Überprüfen</strong> — Schau die Karten durch, korrigiere bei Bedarf und schalte das Set auf "Veröffentlicht", wenn alles passt.</li>
+          </ol>
+          <p style="margin:0;font-size:0.78rem;color:var(--text-light);">Tipp: Du kannst mehrfach importieren — neue Karten werden ans Ende angefügt. Achte darauf, dieselbe Liste nicht doppelt zu importieren, da Duplikate nicht automatisch erkannt werden.</p>
+        </div>
+      </details>
+      <div id="importDialog" style="display:none;margin-bottom:14px;">
+        <div class="se-meta">
+          <div class="se-field">
+            <label>JSON einfügen</label>
+            <textarea id="importJson" style="min-height:120px;font-family:monospace;font-size:0.8rem;" placeholder='[{"front_main":"hello","back_main":"hallo","front_sub":"noun","example":"Say <b>hello</b> to everyone."},...]'></textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button class="se-card-edit-btn se-card-edit-cancel" onclick="document.getElementById('importDialog').style.display='none'">Abbrechen</button>
+            <button class="se-card-edit-btn se-card-edit-save" onclick="importCards()">Importieren</button>
+          </div>
+        </div>
+      </div>
+      <div id="editorCards">${cardsHtml}</div>
+
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.08);">
+        <button class="btn-secondary" style="width:100%;padding:10px;color:var(--again);border-color:var(--again);" onclick="archiveSet()">Set archivieren (aus Bibliothek entfernen)</button>
+      </div>
+    </div>`;
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleCardEdit(idx) {
+  const el = document.getElementById('card-' + idx);
+  if (!el) return;
+  el.classList.toggle('editing');
+}
+
+function saveCardEdit(idx) {
+  const cards = EDITOR_SET.cards || [];
+  const c = cards[idx];
+  if (!c) return;
+
+  const frontVal = document.getElementById('cf-' + idx).value.trim();
+  const subVal = document.getElementById('cs-' + idx).value.trim();
+  const backVal = document.getElementById('cb-' + idx).value.trim();
+  const exampleVal = document.getElementById('ce-' + idx).value.trim();
+  const tagsVal = document.getElementById('ct-' + idx).value.trim();
+
+  if (!frontVal || !backVal) { showSync('Vorder- und Rückseite sind Pflicht', true); return; }
+
+  c.front_main = frontVal;
+  c.back_main = backVal;
+  if (subVal) c.front_sub = subVal; else delete c.front_sub;
+  if (exampleVal) c.example = exampleVal; else delete c.example;
+  if (tagsVal) c.tags = tagsVal.split(',').map(t => t.trim()).filter(Boolean); else delete c.tags;
+
+  toggleCardEdit(idx);
+  scheduleEditorSave();
+  renderEditorView();
+  showSync('Karte aktualisiert');
+}
+
+function deleteCard(idx) {
+  const cards = EDITOR_SET.cards || [];
+  if (idx < 0 || idx >= cards.length) return;
+  const card = cards[idx];
+  let msg = `Karte "${card.front_main || '(leer)'}" wirklich löschen?`;
+  if (EDITOR_USER_COUNT > 0) {
+    msg += `\n\n⚠️ ${EDITOR_USER_COUNT} ${EDITOR_USER_COUNT === 1 ? 'Nutzer lernt' : 'Nutzer lernen'} dieses Set. Bereits gelernter Fortschritt für diese Karte geht verloren.`;
+  }
+  if (!confirm(msg)) return;
+  cards.splice(idx, 1);
+  EDITOR_SET.cards = cards;
+  scheduleEditorSave();
+  renderEditorView();
+}
+
+function addCard() {
+  const cards = EDITOR_SET.cards || [];
+  const newId = EDITOR_SET.id.replace(/[^a-z0-9_]/g, '') + '_' + (cards.length + 1);
+  cards.push({ id: newId, front_main: '', back_main: '' });
+  EDITOR_SET.cards = cards;
+  renderEditorView();
+  // Scroll to bottom and open edit
+  setTimeout(() => {
+    const idx = cards.length - 1;
+    const el = document.getElementById('card-' + idx);
+    if (el) { el.scrollIntoView({ behavior: 'smooth' }); toggleCardEdit(idx); }
+  }, 100);
+}
+
+function editorMetaChanged() {
+  EDITOR_SET.name = document.getElementById('se-name').value.trim();
+  EDITOR_SET.description = document.getElementById('se-desc').value.trim();
+  EDITOR_SET.subject = document.getElementById('se-subject').value;
+  EDITOR_SET.grade_level = document.getElementById('se-grade').value;
+  EDITOR_SET.category = document.getElementById('se-cat').value.trim();
+  EDITOR_SET.level = document.getElementById('se-level').value;
+  scheduleEditorSave();
+}
+
+function scheduleEditorSave() {
+  EDITOR_DIRTY = true;
+  if (EDITOR_SAVE_TIMER) clearTimeout(EDITOR_SAVE_TIMER);
+  EDITOR_SAVE_TIMER = setTimeout(doEditorSave, 2000);
+}
+
+async function doEditorSave() {
+  if (!EDITOR_DIRTY || !EDITOR_SET) return;
+  EDITOR_DIRTY = false;
+  showSync('Speichere…');
+  try {
+    const res = await callSetManager('update', {
+      set_id: EDITOR_SET.id,
+      data: {
+        name: EDITOR_SET.name,
+        description: EDITOR_SET.description,
+        subject: EDITOR_SET.subject,
+        category: EDITOR_SET.category,
+        grade_level: EDITOR_SET.grade_level,
+        level: EDITOR_SET.level,
+        has_reverse: EDITOR_SET.has_reverse,
+        cards: EDITOR_SET.cards,
+      }
+    });
+    if (res.error) throw new Error(res.error);
+    showSync('Gespeichert ✓');
+  } catch (e) {
+    console.error(e);
+    EDITOR_DIRTY = true;
+    showSync('Fehler beim Speichern', true);
+  }
+}
+
+function showImportDialog() {
+  const d = document.getElementById('importDialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  if (d.style.display === 'block') document.getElementById('importJson').focus();
+}
+
+function cleanJsonString(raw) {
+  // Extract JSON array from markdown code blocks if present
+  let s = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  // Try to extract just the array if there's surrounding text
+  const arrMatch = s.match(/\[[\s\S]*\]/);
+  if (arrMatch) s = arrMatch[0];
+  // Fix common LLM output issues inside JSON strings:
+  // Replace smart/curly quotes with straight quotes (outside of JSON structure)
+  s = s.replace(/\u201C/g, '\\"').replace(/\u201D/g, '\\"'); // " " → \"
+  s = s.replace(/\u201E/g, '\\"');                            // „ → \"
+  s = s.replace(/\u2018/g, "'").replace(/\u2019/g, "'");      // ' ' → '
+  // Replace em-dash with -- and en-dash with - (only problematic in some encodings)
+  s = s.replace(/\u2014/g, '--').replace(/\u2013/g, '-');
+  // Replace ellipsis character with three dots
+  s = s.replace(/\u2026/g, '...');
+  return s;
+}
+
+function importCards() {
+  let raw = document.getElementById('importJson').value.trim();
+  if (!raw) { showSync('Kein JSON eingefügt', true); return; }
+  raw = cleanJsonString(raw);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    // Show error with line/column hint
+    const match = e.message.match(/position (\d+)/i) || e.message.match(/column (\d+)/i);
+    const pos = match ? parseInt(match[1]) : -1;
+    let hint = 'Ungültiges JSON: ' + e.message;
+    if (pos > 0) {
+      const around = raw.substring(Math.max(0, pos - 30), pos + 30);
+      hint += '\n\nFehlerstelle: …' + around + '…';
+    }
+    hint += '\n\nTipp: Häufige Ursache sind Anführungszeichen im Text. Bitte die KI, das JSON nochmal zu prüfen und Sonderzeichen korrekt zu escapen.';
+    alert(hint);
+    return;
+  }
+  if (!Array.isArray(parsed)) { showSync('JSON muss ein Array sein', true); return; }
+
+  const cards = EDITOR_SET.cards || [];
+  const setPrefix = EDITOR_SET.id.replace(/[^a-z0-9_]/g, '');
+  let added = 0;
+  for (const item of parsed) {
+    if (!item.front_main) continue;
+    const id = item.id || (setPrefix + '_' + (cards.length + 1) + '_' + item.front_main.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 30));
+    const card = {
+      id,
+      front_main: item.front_main,
+      back_main: item.back_main || '',
+    };
+    if (item.front_sub) card.front_sub = item.front_sub;
+    if (item.example) card.example = item.example;
+    if (item.tags && Array.isArray(item.tags) && item.tags.length) card.tags = item.tags;
+    cards.push(card);
+    added++;
+  }
+  if (added === 0) { showSync('Keine gültigen Karten gefunden', true); return; }
+  EDITOR_SET.cards = cards;
+  document.getElementById('importDialog').style.display = 'none';
+  document.getElementById('importJson').value = '';
+  scheduleEditorSave();
+  renderEditorView();
+  showSync(`${added} Karten importiert ✓`);
+}
+
+function copyGeneratePrompt() {
+  const s = EDITOR_SET;
+  const context = [s.subject, s.grade_level ? 'Jahrgang ' + s.grade_level : '', s.level, s.category].filter(Boolean).join(', ');
+  const prompt = `Erstelle Vokabelkarten als JSON-Array für einen Vokabeltrainer.
+
+Kontext: ${context || 'Englisch-Vokabeln'}
+Set-Name: ${s.name || 'Neues Set'}
+
+Gib mir ein JSON-Array mit diesem Format:
+[
+  {
+    "front_main": "abandon",
+    "back_main": "aufgeben, verlassen",
+    "front_sub": "verb",
+    "example": "They had to <b>abandon</b> the sinking ship.",
+    "tags": ["Wortschatz"]
+  }
+]
+
+Regeln:
+- front_main: Das englische Wort oder die Phrase
+- back_main: Deutsche Übersetzung(en) oder Erklärung, kommagetrennt
+- front_sub: Wortart (verb, noun, adjective, adverb, phrase, etc.) -- optional
+- example: Ein Beispielsatz auf Englisch. Das Zielwort mit <b>...</b> markieren -- optional, aber empfohlen
+- tags: Array von Kategorien/Schlagwoertern, z.B. ["Stilmittel", "Imagery"] oder ["Einleitung"] -- optional, aber empfohlen wenn die Woerter thematisch gruppiert werden koennen
+- Jede Karte braucht mindestens front_main und back_main
+- Gib NUR das JSON-Array zurueck, keinen weiteren Text
+
+WICHTIG fuer valides JSON:
+- Verwende NUR gerade Anfuehrungszeichen ("), KEINE typografischen ("" oder \u201E\u201C)
+- Anfuehrungszeichen innerhalb von Werten muessen escaped werden: \\"
+- Verwende ... statt des Ellipsis-Zeichens (\u2026)
+- Verwende -- statt Em-Dash (\u2014)
+- Kein Komma nach dem letzten Element in Arrays oder Objekten
+
+Erstelle Karten für folgende Wörter:
+[HIER DEINE WORTLISTE EINFÜGEN — ein Wort pro Zeile, oder ein Foto der Wortliste hochladen, oder die KI bitten eine thematische Wortliste zu erstellen]`;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    showSync('Prompt kopiert ✓');
+  }).catch(() => {
+    // Fallback: show in textarea
+    const d = document.getElementById('importDialog');
+    d.style.display = 'block';
+    document.getElementById('importJson').value = prompt;
+    document.getElementById('importJson').select();
+    showSync('Prompt in Textfeld eingefügt — bitte manuell kopieren');
+  });
+}
+
+async function archiveSet() {
+  if (!EDITOR_SET) return;
+  const userCount = EDITOR_USER_COUNT;
+  let msg = `Set "${EDITOR_SET.name}" wirklich archivieren?\n\nDas Set verschwindet aus der Bibliothek.`;
+  if (userCount > 0) {
+    msg += `\n\n⚠️ ${userCount} ${userCount === 1 ? 'Nutzer hat' : 'Nutzer haben'} dieses Set aktiviert. Deren bisheriger Lernfortschritt bleibt erhalten, aber sie können keine neuen Karten mehr daraus lernen.`;
+  }
+  if (!confirm(msg)) return;
+  try {
+    const res = await callSetManager('archive', { set_id: EDITOR_SET.id });
+    if (res.error) throw new Error(res.error);
+    showSync('Set archiviert');
+    EDITOR_SET = null;
+    renderSetManager();
+  } catch (e) {
+    console.error(e);
+    showSync('Fehler: ' + e.message, true);
+  }
+}
+
+async function togglePublish() {
+  if (!EDITOR_SET) return;
+  const newState = !EDITOR_SET.published;
+  if (EDITOR_SET.published && EDITOR_USER_COUNT > 0) {
+    const ok = confirm(`Set zurück in den Entwurf setzen?\n\n⚠️ ${EDITOR_USER_COUNT} ${EDITOR_USER_COUNT === 1 ? 'Nutzer hat' : 'Nutzer haben'} dieses Set aktiviert. Es verschwindet aus deren Bibliothek, bisheriger Fortschritt bleibt aber erhalten.`);
+    if (!ok) return;
+  }
+  try {
+    const res = await callSetManager('update', {
+      set_id: EDITOR_SET.id,
+      data: { published: newState },
+    });
+    if (res.error) throw new Error(res.error);
+    EDITOR_SET.published = newState;
+    showSync(newState ? 'Veröffentlicht ✓' : 'Zurück zum Entwurf');
+    renderEditorView();
+  } catch (e) {
+    console.error(e);
+    showSync('Fehler', true);
+  }
+}
+
+async function exitEditor() {
+  if (EDITOR_DIRTY) await doEditorSave();
+  EDITOR_SET = null;
+  renderSetManager();
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function renderDashboard() {
+  const counts = getCardCounts();
+  const brakeActive = isBacklogBrakeActive();
+  const overdueCount = countOverdue();
+  const newAvailable = brakeActive ? 0 : Math.min(CONFIG.newCardsPerDay - (STATS.todayNewSeen || 0), counts.fresh);
+  const totalDue = counts.dueToday + Math.max(0, newAvailable);
+  const streak = STATS.streak || 0;
+  const streakClass = streak > 0 ? '' : 'streak-zero';
+  const doneToday = STATS.todayReviews || 0;
+
+  const pctFresh = counts.total ? (counts.fresh / counts.total * 100) : 0;
+  const pctLearn = counts.total ? (counts.learning / counts.total * 100) : 0;
+  const pctFam = counts.total ? (counts.familiar / counts.total * 100) : 0;
+  const pctMast = counts.total ? (counts.mastered / counts.total * 100) : 0;
+
+  const activeNames = ALL_SETS.filter(s => ACTIVE_SET_IDS.includes(s.id)).map(s => s.name);
+  const libSub = activeNames.length === 0
+    ? 'Noch kein Set aktiv'
+    : activeNames.length === 1
+      ? activeNames[0]
+      : `${activeNames.length} Sets aktiv`;
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="header">
+        <div class="header-logo">VocabFlow</div>
+        <div class="header-title">Dein Deck</div>
+        <div class="header-user">${IS_GUEST ? 'Als Gast eingeloggt (kein Leistungstracking)' : `angemeldet als ${USER_DISPLAY}`}</div>
+        <div class="header-tag">Dein Vokabeltrainer mit Spaced Repetition<button class="info-btn" onclick="showSpacedRepetitionInfo()" title="Was ist Spaced Repetition?">i</button><button class="info-btn" onclick="showHowItWorksInfo()" title="Wie funktioniert VocabFlow?">?</button></div>
+      </div>
+
+      <div class="streak-card ${streakClass}">
+        <div class="streak-half">
+          <span class="streak-flame">🔥</span>
+          <div class="streak-count">${streak}</div>
+          <div class="streak-label">${streak === 1 ? 'Tag in Folge' : 'Tage in Folge'}</div>
+        </div>
+        <div class="streak-divider"></div>
+        <div class="streak-half">
+          <span class="streak-icon">✅</span>
+          <div class="streak-count">${TOTAL_PRACTICE_DAYS}</div>
+          <div class="streak-label">${TOTAL_PRACTICE_DAYS === 1 ? 'Übungstag' : 'Übungstage'} gesamt</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-due">
+          <div class="stat-value">${totalDue}</div>
+          <div class="stat-label">Heute fällig</div>
+        </div>
+        <div class="stat-card stat-done">
+          <div class="stat-value">${doneToday}</div>
+          <div class="stat-label">Heute gelernt</div>
+        </div>
+        <div class="stat-card stat-total">
+          <div class="stat-value">${counts.total}</div>
+          <div class="stat-label">Karten gesamt</div>
+        </div>
+        <div class="stat-card stat-new">
+          <div class="stat-value">${counts.fresh}</div>
+          <div class="stat-label">Noch ungesehen</div>
+        </div>
+      </div>
+
+      ${counts.total > 0 ? `
+      <div class="dist-card">
+        <div class="dist-title">Kartenverteilung</div>
+        <div class="dist-bar">
+          <span class="b-fresh" style="width:${pctFresh}%"></span>
+          <span class="b-learning" style="width:${pctLearn}%"></span>
+          <span class="b-familiar" style="width:${pctFam}%"></span>
+          <span class="b-mastered" style="width:${pctMast}%"></span>
+        </div>
+        <div class="dist-legend">
+          <div class="dist-legend-item"><span class="dist-dot" style="background:var(--fresh)"></span> Fresh ${counts.fresh}</div>
+          <div class="dist-legend-item"><span class="dist-dot" style="background:var(--learning)"></span> Learning ${counts.learning}</div>
+          <div class="dist-legend-item"><span class="dist-dot" style="background:var(--familiar)"></span> Familiar ${counts.familiar}</div>
+          <div class="dist-legend-item"><span class="dist-dot" style="background:var(--mastered)"></span> Mastered ${counts.mastered}</div>
+        </div>
+      </div>` : `
+      <div class="empty-state">
+        <span class="empty-emoji">📖</span>
+        <div class="empty-title">Noch keine Karten</div>
+        <div class="empty-text">Aktiviere Vokabelsets in der Bibliothek, um loszulegen.</div>
+      </div>`}
+
+      <button class="btn-library" onclick="renderLibrary(false)">
+        <div>
+          <div>📚 Bibliothek</div>
+          <div class="bl-sub">${libSub}</div>
+        </div>
+        <span class="bl-chevron">▶</span>
+      </button>
+
+      ${USER_ROLE === 'teacher' ? `
+      <button class="btn-library" onclick="renderSetManager()" style="border-color:var(--easy);background:linear-gradient(135deg,#f0f8f0,#e8f4e8);">
+        <div>
+          <div>🛠 Sets verwalten</div>
+          <div class="bl-sub">Sets erstellen und bearbeiten</div>
+        </div>
+        <span class="bl-chevron">▶</span>
+      </button>` : ''}
+
+      ${brakeActive ? `
+      <div class="backlog-hint">
+        <strong>⏸ Neue Karten pausiert</strong>
+        <div>Du hast ${overdueCount} überfällige Wiederholungen. Hol erst den Rückstand auf — dann gibt es wieder frische Karten.</div>
+      </div>` : ''}
+
+      <button class="btn-start" ${totalDue === 0 ? 'disabled' : ''} onclick="startSession()">
+        ${totalDue > 0 ? `Lernen starten · ${totalDue} Karten` : counts.total === 0 ? 'Keine Karten im Deck' : 'Keine Karten fällig — komm morgen wieder!'}
+      </button>
+
+      ${(counts.fresh - Math.max(0, newAvailable)) > 0 ? `
+        <button class="btn-bonus" onclick="startBonusSession()">
+          + Heute ${Math.min(CONFIG.newCardsPerDay, counts.fresh - Math.max(0, newAvailable))} neue Karten dazulernen
+        </button>` : ''}
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// SESSION
+// ══════════════════════════════════════════
+function startSession() {
+  QUEUE = buildQueue();
+  if (QUEUE.length === 0) { renderDashboard(); return; }
+  QUEUE_INDEX = 0;
+  SESSION_STATS = { total: 0, newCards: 0, reviews: 0, correct: 0 };
+  renderCard();
+}
+
+function startBonusSession() {
+  const remaining = countFreshRemaining();
+  const availableNow = Math.max(0, CONFIG.newCardsPerDay - (STATS.todayNewSeen || 0));
+  const bonusCount = Math.min(CONFIG.newCardsPerDay, Math.max(0, remaining - availableNow));
+  if (bonusCount <= 0) { renderDashboard(); return; }
+  const ok = confirm(
+    `${bonusCount} zusätzliche neue Karten heute lernen?\n\n` +
+    `Hinweis: Wenn du heute mehr neue Karten lernst, hast du in den nächsten Tagen ` +
+    `mehr Wiederholungen. Spaced Repetition funktioniert am besten, wenn du täglich ` +
+    `eine ähnliche Menge lernst — lieber regelmäßig wenig als einmalig viel.`
+  );
+  if (!ok) return;
+  QUEUE = buildQueue(bonusCount);
+  if (QUEUE.length === 0) { renderDashboard(); return; }
+  QUEUE_INDEX = 0;
+  SESSION_STATS = { total: 0, newCards: 0, reviews: 0, correct: 0 };
+  renderCard();
+}
+
+function renderCard() {
+  if (QUEUE_INDEX >= QUEUE.length) { renderSessionEnd(); return; }
+
+  const item = QUEUE[QUEUE_INDEX];
+  const cs = PROGRESS[item.uid] || freshCardState();
+  const isNew = cs.repetitions === 0;
+
+  const previewCard = { ...cs };
+  const intervals = FSRS.previewIntervals(previewCard);
+  const progress = QUEUE.length > 0 ? ((QUEUE_INDEX) / QUEUE.length * 100) : 0;
+  const hasAudio = !!(item.audio_url || item.example_audio_url);
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="learn-header">
+        <button class="learn-back" onclick="endSessionEarly()">← Zurück</button>
+        ${hasAudio ? `<button id="autoplayBtn" class="autoplay-toggle${AUTOPLAY_AUDIO ? ' active' : ''}" onclick="event.stopPropagation(); toggleAutoplay()">${AUTOPLAY_AUDIO ? '🔊 Auto' : '🔇 Auto'}</button>` : ''}
+        <div class="learn-progress-text">${QUEUE_INDEX + 1} / ${QUEUE.length}</div>
+      </div>
+      <div class="learn-pbar-wrap">
+        <div class="learn-pbar" style="width:${progress}%"></div>
+      </div>
+
+      <div class="card-perspective">
+        <div class="card-inner" id="cardInner" onclick="flipCard()">
+          <div class="card-face">
+            <div class="cf-badges">
+              ${item.front_sub ? `<span class="cf-badge cf-badge-sub">${escapeHtml(item.front_sub)}</span>` : ''}
+              <span class="cf-badge cf-badge-set">${escapeHtml(item.setName)}</span>
+              ${isNew ? '<span class="cf-badge cf-badge-new">NEU</span>' : ''}
+              ${(item.tags || []).map(t => `<span class="card-tag">${escapeHtml(t)}</span>`).join('')}
+            </div>
+            <div class="cf-word">${escapeHtml(item.front_main)}</div>
+            ${item.example ? `<div class="cf-sentence">${escapeHtml(item.example).replace(/&lt;b&gt;[^&]*?&lt;\/b&gt;/gi, '<b>_____</b>')}</div>` : '<div class="cf-sentence"></div>'}
+            <div class="cf-tap-hint">Tippe zum Aufdecken</div>
+          </div>
+          <div class="card-face card-back-face">
+            <div class="cb-main">${escapeHtml(item.back_main)}</div>
+            ${item.back_sub ? `<div class="cb-sub">${escapeHtml(item.back_sub)}</div>` : ''}
+            ${item.image ? `<img class="cb-image" src="${escapeAttr(item.image)}" alt="">` : ''}
+            ${item.audio_url ? `<button class="cb-audio-btn" onclick="event.stopPropagation(); playCardAudio('${escapeAttr(item.audio_url)}')">Aussprache</button>` : ''}
+            ${item.example ? `
+              <div class="cb-section">
+                <div class="cb-section-title">Beispiel${item.example_audio_url ? ` <button class="cb-audio-btn cb-audio-btn-inline" onclick="event.stopPropagation(); playCardAudio('${escapeAttr(item.example_audio_url)}')">Anhören</button>` : ''}</div>
+                <div class="cb-section-text">${escapeHtml(item.example).replace(/&lt;b&gt;/gi, '<b>').replace(/&lt;\/b&gt;/gi, '</b>')}</div>
+              </div>` : ''}
+            ${item.mnemonic ? `<div class="cb-mnemonic">${escapeHtml(item.mnemonic)}</div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="rating-buttons" id="ratingBtns">
+        <button class="rating-btn rb-again" onclick="rate(1)">
+          <span class="rb-label">Nicht gewusst</span>
+          <span class="rb-interval">${formatInterval(intervals[0])}</span>
+        </button>
+        <button class="rating-btn rb-hard" onclick="rate(2)">
+          <span class="rb-label">Knapp gewusst</span>
+          <span class="rb-interval">${formatInterval(intervals[1])}</span>
+        </button>
+        <button class="rating-btn rb-good" onclick="rate(3)">
+          <span class="rb-label">Gewusst</span>
+          <span class="rb-interval">${formatInterval(intervals[2])}</span>
+        </button>
+        <button class="rating-btn rb-easy" onclick="rate(4)">
+          <span class="rb-label">Schnell gewusst</span>
+          <span class="rb-interval">${formatInterval(intervals[3])}</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+function playCardAudio(url) {
+  if (!url) return;
+  try {
+    const audio = new Audio(url);
+    audio.play().catch(e => console.warn('Audio playback failed:', e));
+  } catch (e) { console.warn('Audio error:', e); }
+}
+
+function toggleAutoplay() {
+  AUTOPLAY_AUDIO = !AUTOPLAY_AUDIO;
+  localStorage.setItem('vocabflow_autoplay', JSON.stringify(AUTOPLAY_AUDIO));
+  const btn = document.getElementById('autoplayBtn');
+  if (btn) {
+    btn.classList.toggle('active', AUTOPLAY_AUDIO);
+    btn.textContent = AUTOPLAY_AUDIO ? '🔊 Auto' : '🔇 Auto';
+  }
+}
+
+function flipCard() {
+  const inner = document.getElementById('cardInner');
+  if (!inner) return;
+  const firstFlip = !inner.classList.contains('revealed');
+  inner.classList.toggle('flipped');
+  if (firstFlip) {
+    inner.classList.add('revealed');
+    setTimeout(() => {
+      const rb = document.getElementById('ratingBtns');
+      if (rb) rb.classList.add('visible');
+    }, 150);
+    // Autoplay: word audio, then example audio after a short pause
+    if (AUTOPLAY_AUDIO && QUEUE_INDEX < QUEUE.length) {
+      const item = QUEUE[QUEUE_INDEX];
+      if (item.audio_url) {
+        const wordAudio = new Audio(item.audio_url);
+        wordAudio.play().then(() => {
+          if (item.example_audio_url) {
+            wordAudio.addEventListener('ended', () => {
+              setTimeout(() => playCardAudio(item.example_audio_url), 300);
+            });
+          }
+        }).catch(e => console.warn('Autoplay failed:', e));
+      } else if (item.example_audio_url) {
+        playCardAudio(item.example_audio_url);
+      }
+    }
+  }
+}
+
+async function rate(rating) {
+  const item = QUEUE[QUEUE_INDEX];
+  const cs = PROGRESS[item.uid] || freshCardState();
+  const wasNew = cs.repetitions === 0;
+
+  FSRS.schedule(cs, rating);
+  PROGRESS[item.uid] = cs;
+
+  SESSION_STATS.total++;
+  if (wasNew) {
+    SESSION_STATS.newCards++;
+    STATS.todayNewSeen = (STATS.todayNewSeen || 0) + 1;
+  } else {
+    SESSION_STATS.reviews++;
+  }
+  if (rating >= 2) SESSION_STATS.correct++;
+
+  if (rating === 1) QUEUE.push(item);
+
+  STATS.todayReviews = (STATS.todayReviews || 0) + 1;
+  STATS.totalReviews = (STATS.totalReviews || 0) + 1;
+
+  // Fire-and-forget sync; UI doesn't block
+  saveCardProgress(USER_NAME, item.setId, item.id, cs)
+    .then(() => showSync('Synchronisiert ✓'))
+    .catch((e) => { console.error(e); showSync('Sync-Fehler', true); });
+
+  QUEUE_INDEX++;
+  renderCard();
+}
+
+function endSessionEarly() {
+  updateStreak();
+  renderDashboard();
+}
+
+function updateStreak() {
+  if (SESSION_STATS && SESSION_STATS.total > 0) {
+    // Update in-memory streak if this is the first session today
+    if (STATS.lastSession !== today()) {
+      TOTAL_PRACTICE_DAYS++;
+      STATS.streak = (STATS.streak || 0) + 1;
+      STATS.lastSession = today();
+    }
+    // Report total practice days to Moodle gradebook
+    scormSet('cmi.core.score.raw', TOTAL_PRACTICE_DAYS);
+    scormSet('cmi.core.score.min', '0');
+    scormSet('cmi.core.score.max', '365');
+    scormCommit();
+  }
+}
+
+function renderSessionEnd() {
+  updateStreak();
+
+  const accuracy = SESSION_STATS.total > 0
+    ? Math.round(SESSION_STATS.correct / SESSION_STATS.total * 100)
+    : 0;
+  const dueTomorrow = getDueTomorrow();
+
+  app.innerHTML = `
+    <div class="session-end">
+      <span class="se-emoji">🎯</span>
+      <div class="se-title">Geschafft!</div>
+
+      <div class="se-stats">
+        <div class="se-stat-row">
+          <span class="se-stat-label">Karten gelernt</span>
+          <span class="se-stat-value">${SESSION_STATS.total}</span>
+        </div>
+        <div class="se-stat-row">
+          <span class="se-stat-label">Davon neu</span>
+          <span class="se-stat-value" style="color:var(--fresh)">${SESSION_STATS.newCards}</span>
+        </div>
+        <div class="se-stat-row">
+          <span class="se-stat-label">Wiederholt</span>
+          <span class="se-stat-value" style="color:var(--good)">${SESSION_STATS.reviews}</span>
+        </div>
+        <div class="se-stat-row">
+          <span class="se-stat-label">Trefferquote</span>
+          <span class="se-stat-value">${accuracy}%</span>
+        </div>
+        <div class="se-stat-row">
+          <span class="se-stat-label">Streak</span>
+          <span class="se-stat-value">🔥 ${STATS.streak} ${STATS.streak === 1 ? 'Tag' : 'Tage'}</span>
+        </div>
+      </div>
+
+      <div class="se-next">
+        ${dueTomorrow > 0 ? `Morgen ${dueTomorrow === 1 ? 'ist 1 Karte' : 'sind ' + dueTomorrow + ' Karten'} fällig.` : 'Morgen sind keine Karten fällig.'}
+      </div>
+
+      <div class="se-buttons">
+        <button class="btn-start" onclick="renderDashboard()">Zum Dashboard</button>
+        ${countFreshRemaining() > 0 ? '<button class="btn-secondary" onclick="startBonusSession()">Bonus: Mehr neue Karten</button>' : ''}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// START
+// ══════════════════════════════════════════
+boot();
+</script>
+</body>
+</html>

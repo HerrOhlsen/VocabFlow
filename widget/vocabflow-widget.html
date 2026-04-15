@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VocabFlow Stats</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.widget {
+  background: linear-gradient(135deg, #f8f6f2 0%, #f0ece4 100%);
+  border-radius: 14px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 520px;
+  margin: 8px auto;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+}
+.widget-left {
+  flex: 1;
+}
+.widget-logo {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9b9bab;
+  margin-bottom: 8px;
+}
+.stat-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.stat {
+  text-align: center;
+  min-width: 56px;
+}
+.stat-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 0.65rem;
+  color: #6b6b80;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.stat-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(0,0,0,0.08);
+}
+.loading {
+  color: #9b9bab;
+  font-size: 0.85rem;
+  padding: 20px;
+  text-align: center;
+}
+.empty {
+  background: linear-gradient(135deg, #f8f6f2 0%, #f0ece4 100%);
+  border-radius: 14px;
+  padding: 16px 24px;
+  max-width: 520px;
+  margin: 8px auto;
+  border: 1px solid rgba(0,0,0,0.06);
+  text-align: center;
+  color: #6b6b80;
+  font-size: 0.85rem;
+}
+.empty-logo {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9b9bab;
+  margin-bottom: 6px;
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Lädt…</div></div>
+
+<script>
+// TODO: Replace with your Supabase project credentials.
+const SUPABASE_URL = '<YOUR_SUPABASE_URL>';        // e.g. https://xxxxxxxx.supabase.co
+const SUPABASE_KEY = '<YOUR_SUPABASE_ANON_KEY>';   // anon / publishable key
+
+function getMoodleUserId() {
+  // Walk up all frames to find Moodle's M.cfg.userid
+  try {
+    let win = window;
+    for (let i = 0; i < 10; i++) {
+      try {
+        if (win.M && win.M.cfg && win.M.cfg.userId) return String(win.M.cfg.userId);
+      } catch (e) {}
+      if (win === win.parent) break;
+      win = win.parent;
+    }
+  } catch (e) {}
+  // Fallback: try window.top directly
+  try {
+    if (window.top.M && window.top.M.cfg && window.top.M.cfg.userId) {
+      return String(window.top.M.cfg.userId);
+    }
+  } catch (e) {}
+  // Fallback: parse userid from URL query params (if passed manually)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('userid')) return params.get('userid');
+  } catch (e) {}
+  return null;
+}
+
+// Wait for Moodle's M.cfg to be available (it may load after the iframe)
+function waitForMoodleUserId(maxAttempts = 20) {
+  return new Promise((resolve) => {
+    let attempts = 0;
+    function check() {
+      const id = getMoodleUserId();
+      if (id) { resolve(id); return; }
+      attempts++;
+      if (attempts >= maxAttempts) { resolve(null); return; }
+      setTimeout(check, 250);
+    }
+    check();
+  });
+}
+
+function getDevUser() {
+  try { return localStorage.getItem('vocabflow_dev_user'); } catch (e) { return null; }
+}
+
+async function boot() {
+  const app = document.getElementById('app');
+
+  const moodleId = await waitForMoodleUserId();
+  const devUser = getDevUser();
+  let userName = '';
+
+  if (moodleId) {
+    userName = `moodle_${moodleId}`;
+  } else if (devUser) {
+    userName = `dev_${devUser}`;
+  } else {
+    console.log('[VocabFlow Widget] moodleId:', moodleId, 'devUser:', devUser);
+    try { console.log('[VocabFlow Widget] window.top.M:', window.top.M); } catch (e) { console.log('[VocabFlow Widget] window.top.M not accessible:', e.message); }
+    app.innerHTML = '<div class="empty"><div class="empty-logo">VocabFlow</div>Nutzer konnte nicht erkannt werden.</div>';
+    return;
+  }
+  console.log('[VocabFlow Widget] User erkannt:', userName);
+
+  try {
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Load active sets for this user
+    const { data: userSets, error: usErr } = await sb
+      .from('user_sets').select('set_id').eq('user_name', userName);
+    if (usErr) throw usErr;
+    const activeSetIds = (userSets || []).map(r => r.set_id);
+
+    // Load progress
+    const { data, error } = await sb
+      .from('progress').select('set_id, card_id, last_review, next_review, repetitions')
+      .eq('user_name', userName);
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      app.innerHTML = '<div class="empty"><div class="empty-logo">VocabFlow</div>Noch keine Übungstage — starte deine erste Session!</div>';
+      return;
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const reviewDays = new Set();
+    let dueReviews = 0;
+    const progressMap = {};
+
+    for (const row of data) {
+      if (row.last_review) reviewDays.add(row.last_review);
+      const uid = row.set_id + '::' + row.card_id;
+      progressMap[uid] = row;
+      if (activeSetIds.includes(row.set_id) && row.repetitions > 0 && row.next_review && row.next_review <= todayStr) {
+        dueReviews++;
+      }
+    }
+    const totalDays = reviewDays.size;
+
+    // Compute streak from DB: count consecutive days backwards from today
+    const sortedDays = Array.from(reviewDays).sort().reverse();
+    let streak = 0;
+    if (sortedDays.length > 0) {
+      let expected = todayStr;
+      if (sortedDays[0] !== todayStr) {
+        const y = new Date(todayStr);
+        y.setDate(y.getDate() - 1);
+        expected = y.toISOString().slice(0, 10);
+      }
+      for (const d of sortedDays) {
+        if (d === expected) {
+          streak++;
+          const prev = new Date(expected);
+          prev.setDate(prev.getDate() - 1);
+          expected = prev.toISOString().slice(0, 10);
+        } else if (d < expected) {
+          break;
+        }
+      }
+    }
+
+    // Days since last practice (anti-streak)
+    let daysSince = 0;
+    if (sortedDays.length > 0) {
+      daysSince = Math.floor((new Date(todayStr) - new Date(sortedDays[0])) / 86400000);
+    }
+
+    // Count new cards available today (mirrors main app logic)
+    const NEW_PER_DAY = 10;
+    let todayNewSeen = 0;
+    for (const row of data) {
+      if (row.last_review === todayStr && row.repetitions === 1) todayNewSeen++;
+    }
+
+    // Load vocab_sets to count unseen cards
+    let newCards = 0;
+    if (activeSetIds.length > 0) {
+      const { data: sets } = await sb.from('vocab_sets').select('id, cards').in('id', activeSetIds);
+      let freshCount = 0;
+      for (const s of (sets || [])) {
+        for (const c of (s.cards || [])) {
+          const uid = s.id + '::' + c.id;
+          if (!progressMap[uid] || progressMap[uid].repetitions === 0) freshCount++;
+        }
+      }
+      newCards = Math.max(0, Math.min(NEW_PER_DAY - todayNewSeen, freshCount));
+    }
+    const dueCount = dueReviews + newCards;
+
+    app.innerHTML = `
+      <div class="widget">
+        <div class="widget-left">
+          <div class="widget-logo">VocabFlow</div>
+          <div class="stat-group">
+            <div class="stat">
+              <div class="stat-icon">📅</div>
+              <div class="stat-value">${totalDays}</div>
+              <div class="stat-label">${totalDays === 1 ? 'Übungstag' : 'Übungstage'}</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+              <div class="stat-icon">🔥</div>
+              <div class="stat-value">${streak}</div>
+              <div class="stat-label">Tage in Folge</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+              <div class="stat-icon">📬</div>
+              <div class="stat-value">${dueCount}</div>
+              <div class="stat-label">Heute fällig</div>
+            </div>
+            <div class="stat-divider"></div>
+            ${daysSince > 0 ? `
+            <div class="stat">
+              <div class="stat-icon">⏸️</div>
+              <div class="stat-value">${daysSince}</div>
+              <div class="stat-label">${daysSince === 1 ? 'Tag Pause' : 'Tage Pause'}</div>
+            </div>` : `
+            <div class="stat">
+              <div class="stat-icon">👍</div>
+              <div class="stat-value"></div>
+              <div class="stat-label">Heute geübt</div>
+            </div>`}
+          </div>
+        </div>
+      </div>`;
+
+  } catch (e) {
+    console.error(e);
+    app.innerHTML = '<div class="empty"><div class="empty-logo">VocabFlow</div>Verbindungsfehler</div>';
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

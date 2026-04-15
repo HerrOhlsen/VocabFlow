@@ -1,0 +1,71 @@
+{
+  "id": "example_english_a1_food",
+  "name": "Example — Food (A1)",
+  "description": "Beispiel-Set zum Testen des JSON-Imports.",
+  "language": "en",
+  "level": "A1",
+  "subject": "Englisch",
+  "category": "Beispiele",
+  "grade_level": "5",
+  "has_reverse": true,
+  "published": false,
+  "archived": false,
+  "cards": [
+    {
+      "id": "card_1",
+      "front_main": "apple",
+      "front_sub": "noun",
+      "back_main": "der Apfel",
+      "example": "I eat an <b>apple</b> every morning.",
+      "tags": ["food", "A1"]
+    },
+    {
+      "id": "card_2",
+      "front_main": "bread",
+      "front_sub": "noun (uncountable)",
+      "back_main": "das Brot",
+      "example": "Please pass me the <b>bread</b>.",
+      "tags": ["food", "A1"]
+    },
+    {
+      "id": "card_3",
+      "front_main": "water",
+      "front_sub": "noun (uncountable)",
+      "back_main": "das Wasser",
+      "example": "Can I have a glass of <b>water</b>?",
+      "tags": ["food", "drink", "A1"]
+    },
+    {
+      "id": "card_4",
+      "front_main": "cheese",
+      "front_sub": "noun",
+      "back_main": "der Käse",
+      "example": "I don't like <b>cheese</b> on my pizza.",
+      "tags": ["food", "A1"]
+    },
+    {
+      "id": "card_5",
+      "front_main": "egg",
+      "front_sub": "noun",
+      "back_main": "das Ei",
+      "example": "She eats an <b>egg</b> for breakfast.",
+      "tags": ["food", "A1"]
+    },
+    {
+      "id": "card_6",
+      "front_main": "to eat",
+      "front_sub": "verb",
+      "back_main": "essen",
+      "example": "What do you want to <b>eat</b> tonight?",
+      "tags": ["verb", "food", "A1"]
+    },
+    {
+      "id": "card_7",
+      "front_main": "to drink",
+      "front_sub": "verb",
+      "back_main": "trinken",
+      "example": "I <b>drink</b> tea in the evening.",
+      "tags": ["verb", "drink", "A1"]
+    }
+  ]
+}

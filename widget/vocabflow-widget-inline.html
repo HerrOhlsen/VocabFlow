@@ -1,0 +1,115 @@
+<div id="vf-widget" style="max-width:440px;margin:8px auto;font-family:'Segoe UI',system-ui,sans-serif;">
+  <div style="background:linear-gradient(135deg,#f8f6f2,#f0ece4);border-radius:14px;padding:16px 24px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 1px 8px rgba(0,0,0,0.04);color:#9b9bab;font-size:0.85rem;text-align:center;">Lädt…</div>
+</div>
+<script>
+(function(){
+  // URLs split to prevent Moodle's URL autolinker from destroying them.
+  // IMPORTANT: keep the split form — do NOT concatenate into a single string.
+  var B = "htt" + "ps://<YOUR_PROJECT_ID>.sup" + "abase.co";
+  var URL = B + '/rest/v1';
+  var KEY = '<YOUR_SUPABASE_ANON_KEY>';
+  var H = {'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json'};
+  var el = document.getElementById('vf-widget');
+  var uid = (window.M && M.cfg && M.cfg.userId) ? 'moodle_' + M.cfg.userId : null;
+  if (!uid) { el.innerHTML = ''; return; }
+
+  function q(table, params) {
+    return fetch(URL + '/' + table + '?' + params, {headers: H}).then(function(r){ return r.json(); });
+  }
+
+  Promise.all([
+    q('user_sets', 'select=set_id&user_name=eq.' + uid),
+    q('progress', 'select=set_id,card_id,last_review,next_review,repetitions&user_name=eq.' + uid)
+  ]).then(function(res){
+    var activeSetIds = res[0].map(function(r){ return r.set_id; });
+    var progress = res[1];
+    if (!progress || progress.length === 0) {
+      el.innerHTML = '<div style="background:linear-gradient(135deg,#f8f6f2,#f0ece4);border-radius:14px;padding:16px 24px;border:1px solid rgba(0,0,0,0.06);text-align:center;color:#6b6b80;font-size:0.85rem;"><span style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9b9bab;display:block;margin-bottom:6px;">VocabFlow</span>Noch keine Übungstage — starte deine erste Session!</div>';
+      return;
+    }
+
+    var today = new Date().toISOString().slice(0,10);
+    var days = {};
+    var dueReviews = 0;
+    var pMap = {};
+    for (var i = 0; i < progress.length; i++) {
+      var r = progress[i];
+      if (r.last_review) days[r.last_review] = 1;
+      var k = r.set_id + '::' + r.card_id;
+      pMap[k] = r;
+      if (activeSetIds.indexOf(r.set_id) >= 0 && r.repetitions > 0 && r.next_review && r.next_review <= today) dueReviews++;
+    }
+    var totalDays = Object.keys(days).length;
+
+    // Compute streak from DB: count consecutive days backwards from today
+    var sortedDays = Object.keys(days).sort().reverse();
+    var streak = 0;
+    if (sortedDays.length > 0) {
+      var expected = today;
+      if (sortedDays[0] !== today) {
+        var y = new Date(today);
+        y.setDate(y.getDate() - 1);
+        expected = y.toISOString().slice(0,10);
+      }
+      for (var d = 0; d < sortedDays.length; d++) {
+        if (sortedDays[d] === expected) {
+          streak++;
+          var prev = new Date(expected);
+          prev.setDate(prev.getDate() - 1);
+          expected = prev.toISOString().slice(0,10);
+        } else if (sortedDays[d] < expected) {
+          break;
+        }
+      }
+    }
+
+    // Days since last practice (anti-streak)
+    var daysSince = 0;
+    if (sortedDays.length > 0) {
+      daysSince = Math.floor((new Date(today) - new Date(sortedDays[0])) / 86400000);
+    }
+
+    // Fetch vocab_sets for new card count
+    if (activeSetIds.length > 0) {
+      q('vocab_sets', 'select=id,cards&id=in.(' + activeSetIds.join(',') + ')').then(function(sets){
+        var todayNewSeen = 0;
+        for (var p = 0; p < progress.length; p++) {
+          if (progress[p].last_review === today && progress[p].repetitions === 1) todayNewSeen++;
+        }
+        var freshCount = 0;
+        for (var s = 0; s < sets.length; s++) {
+          var cards = sets[s].cards || [];
+          for (var c = 0; c < cards.length; c++) {
+            var k2 = sets[s].id + '::' + cards[c].id;
+            if (!pMap[k2] || pMap[k2].repetitions === 0) freshCount++;
+          }
+        }
+        var newCards = Math.max(0, Math.min(10 - todayNewSeen, freshCount));
+        render(totalDays, streak, dueReviews + newCards, daysSince);
+      });
+    } else {
+      render(totalDays, streak, dueReviews, daysSince);
+    }
+  }).catch(function(e){ console.error('[VocabFlow Widget]', e); el.innerHTML = ''; });
+
+  function render(days, streak, due, daysSince) {
+    var s = '<div style="background:linear-gradient(135deg,#f8f6f2,#f0ece4);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:16px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 1px 8px rgba(0,0,0,0.04);">';
+    s += '<div style="flex:1;">';
+    s += '<div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9b9bab;margin-bottom:8px;">VocabFlow - Statistik</div>';
+    s += '<div style="display:flex;align-items:center;justify-content:space-evenly;width:100%;">';
+    s += stat('📅', days, days === 1 ? 'Übungstag' : 'Übungstage');
+    s += stat('🔥', streak, 'Tage in Folge');
+    s += stat('📬', due, 'Heute fällig');
+    if (daysSince > 0) {
+      s += stat('⏸️', daysSince, daysSince === 1 ? 'Tag Pause' : 'Tage Pause');
+    } else {
+      s += stat('👍', '', 'Heute geübt');
+    }
+    s += '</div></div></div>';
+    el.innerHTML = s;
+  }
+  function stat(icon, val, label) {
+    return '<div style="text-align:center;flex:1;"><div style="font-size:1.2rem;line-height:1;margin-bottom:2px;">' + icon + '</div><div style="font-size:1.35rem;font-weight:800;color:#1a1a2e;line-height:1.2;">' + val + '</div><div style="font-size:0.6rem;color:#6b6b80;font-weight:500;line-height:1.3;">' + label + '</div></div>';
+  }
+})();
+</script>
