@@ -68,6 +68,6 @@ MIT — siehe [LICENSE](LICENSE).
 
 ## Kontakt
 
-Malte Ohlsen — `maltedownunder@gmail.com`
+Malte Ohlsen — `malte.ohlsen@igs-seevetal.de`
 
 Rückmeldungen zu Erfahrungen, Erweiterungen und DSGVO-Bewertungen sind willkommen.

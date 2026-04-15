@@ -45,4 +45,4 @@ Diese Dokumentation beschreibt **VocabFlow**, einen Vokabeltrainer mit Spaced-Re
 
 ## Kontakt
 
-Bei Fragen oder Interesse an Zusammenarbeit: `maltedownunder@gmail.com`
+Bei Fragen oder Interesse an Zusammenarbeit: `malte.ohlsen@igs-seevetal.de`

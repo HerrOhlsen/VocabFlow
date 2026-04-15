@@ -32,4 +32,4 @@ Sicherheitsmodell und offene Findings siehe [Dokumentation/07_Sicherheit_Datensc
 
 ## Fragen
 
-Malte Ohlsen — `maltedownunder@gmail.com` oder als GitHub Issue.
+Malte Ohlsen — `malte.ohlsen@igs-seevetal.de` oder als GitHub Issue.

@@ -131,6 +131,6 @@ Fragen, Fehlerberichte und Ideen gerne als **GitHub Issue** im Repo — das ist 
 
 ## Kontakt
 
-Bei Fragen oder Kooperationsinteresse: `maltedownunder@gmail.com`
+Bei Fragen oder Kooperationsinteresse: `malte.ohlsen@igs-seevetal.de`
 
 Das Projekt ist **frei nachnutzbar** (keine Lizenz-Komplikationen). Rückmeldungen über Erfahrungen, Erweiterungen oder DSGVO-Bewertungen sind willkommen — je mehr Schulen sich das ansehen, desto besser werden die Materialien.
