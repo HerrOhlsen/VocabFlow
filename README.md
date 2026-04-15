@@ -16,6 +16,8 @@ Ein Vokabeltrainer mit Spaced Repetition (FSRS), der als SCORM-Paket in Moodle e
 
 > Bilder folgen. Sobald sie in `docs/screenshots/` liegen, rendern die Einbindungen unten automatisch.
 
+![Hauptansicht](docs/screenshots/hauptansicht.png)
+
 | Lernansicht | Editor |
 |---|---|
 | ![Lernansicht](docs/screenshots/lernansicht.png) | ![Editor](docs/screenshots/editor.png) |

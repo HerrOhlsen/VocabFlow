@@ -13,6 +13,7 @@ Bilder, die im Haupt-`README.md` eingebunden werden.
 
 | Dateiname | Motiv |
 |---|---|
+| `hauptansicht.png` | Startansicht der App (Übersicht / Home) |
 | `lernansicht.png` | Karte im Lern-Flow mit Rating-Buttons |
 | `editor.png` | Lehrer-Editor mit Karten-Liste |
 | `dashboard-widget.png` | Dashboard-Stats-Widget in Moodle (Streak, fällige Karten) |
