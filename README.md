@@ -12,6 +12,18 @@ Ein Vokabeltrainer mit Spaced Repetition (FSRS), der als SCORM-Paket in Moodle e
 - **Inhalte** (optional): Oxford 5000 (A1–C1), Irregular Verbs, Text Analysis Toolkit u.a.
 - **Single-File-HTML** (~100 KB), kein Build-Step, ein:e Lehrer:in + KI-Assistent können es pflegen.
 
+## Screenshots
+
+> Bilder folgen. Sobald sie in `docs/screenshots/` liegen, rendern die Einbindungen unten automatisch.
+
+| Lernansicht | Editor |
+|---|---|
+| ![Lernansicht](docs/screenshots/lernansicht.png) | ![Editor](docs/screenshots/editor.png) |
+
+| Dashboard-Widget | Bibliothek |
+|---|---|
+| ![Dashboard-Widget](docs/screenshots/dashboard-widget.png) | ![Bibliothek](docs/screenshots/bibliothek.png) |
+
 ## Repo-Inhalt
 
 | Ordner | Inhalt |
