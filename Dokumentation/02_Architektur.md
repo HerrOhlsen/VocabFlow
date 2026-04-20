@@ -116,6 +116,35 @@ Alternative Hosting-Optionen (Netlify, Vercel, eigener Server) wurden verworfen:
 - Update-Zyklus: Neue Version = ZIP neu bauen + hochladen + in Moodle neu importieren (oder Cron-Update).
 - Debug-Schwieriger: SCORM-Iframe ist tief verschachtelt, DevTools brauchen Context-Switch.
 
+## Warum Supabase und nicht Nextcloud?
+
+Eine häufige Rückfrage aus Moodle-Admin-Kreisen: „Wir haben doch schon Nextcloud — könnten wir das nicht als Backend nutzen?"
+
+Kurz: **Nein, Nextcloud ist die falsche Tool-Kategorie.** Nextcloud ist Dateispeicher + Kollaboration, kein Backend-as-a-Service. Was VocabFlow vom Backend braucht, deckt Nextcloud nicht ab:
+
+| Anforderung | Supabase | Nextcloud |
+|---|---|---|
+| Postgres mit freiem Schema | ✅ | ❌ interne DB, nicht extern ansprechbar |
+| REST-API auf Tabellen | ✅ (PostgREST) | ❌ (nur „Tables App", nicht für Produktiv-Last) |
+| Row Level Security pro Zeile | ✅ | ❌ Dateirechte, keine Row-Level-Security |
+| Gatekeeper-Funktionen (Edge) | ✅ (Deno) | ❌ müsste eigene PHP-App sein |
+| Audit-Log + Rate-Limits | ✅ eingebaut | ❌ selbst bauen |
+| File Storage mit Public-URLs | ✅ | ✅ (via WebDAV) |
+| Auth ungekoppelt von Moodle | ✅ | Nextcloud hat eigene Auth, keine Moodle-Brücke |
+
+Bei VocabFlow-Größenordnungen (hunderttausende `progress`-Zeilen bei einigen tausend SuS) wäre die Nextcloud „Tables App" nicht leistungsfähig — die ist für Team-Listen gedacht, nicht für eine Lernanwendungs-Datenbank.
+
+**Missverständnis MCP:** Gelegentlich kommt der Hinweis „Nextcloud hat doch MCP". MCP (Model Context Protocol) ist ein Tool-Protokoll für LLMs, kein API-Backend für Webanwendungen. Browser haben keinen MCP-Client. VocabFlow braucht eine HTTP-REST-API, die die SCORM-App aus Moodle heraus anspricht — das ist etwas anderes.
+
+**Wenn das eigentliche Motiv Selbst-Hosting ist** (Datenschutz, „in der Hand der Schule"), gibt es realistische Alternativen zum Supabase-SaaS — alle mit einem ähnlichen Mental Model wie Supabase:
+
+- **Supabase self-hosted** (Docker) — identische API, Open Source, läuft auf eigenem Server.
+- **PostgREST + Postgres** — das Herzstück von Supabase, manuell zusammengesteckt.
+- **PocketBase** — Single-Binary in Go, SQLite darunter, REST-API + Auth + Admin-UI.
+- **Appwrite self-hosted** — funktionsreicher, ähnlich wie Supabase.
+
+Die VocabFlow-Edge-Functions und das SQL-Schema aus diesem Repo lassen sich mit wenig Aufwand auf Supabase self-hosted portieren (das Image spricht dieselbe API).
+
 ## Technologie-Entscheidungen auf einen Blick
 
 | Entscheidung | Gewählt | Verworfen | Grund |
